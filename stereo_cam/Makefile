@@ -3,7 +3,7 @@ EGL_INC =
 OMX_INC =  -I /opt/vc/include/IL
 OMX_ILCLIENT_INC = -I/opt/vc/src/hello_pi/libs/ilclient
 
-MY_INC = -I ../libs/print_OMX/ -I ../libs/socket_helper/
+MY_INC = -I ../libs/print_OMX/ -I ../libs/socket_helper/ -I ../libs/rcam/
 
 INCLUDES = $(DMX_INC) $(EGL_INC) $(OMX_INC) $(OMX_ILCLIENT_INC) $(MY_INC)
 
@@ -21,7 +21,7 @@ MY_LIBS =
 LDFLAGS =  $(DMX_LIBS) $(EGL_LIBS) $(OMX_LIBS) $(OMX_ILCLIENT_LIBS) $(MY_LIBS)
 
 stereo_cam : stereo_cam.o
-	cc -o stereo_cam stereo_cam.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o
+	cc -o stereo_cam stereo_cam.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o
 
 stereo_cam.o : stereo_cam.c
 	cc -c stereo_cam.c $(CFLAGS)

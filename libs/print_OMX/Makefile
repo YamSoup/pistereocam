@@ -16,7 +16,7 @@ OMX_ILCLIENT_LIBS = -L/opt/vc/src/hello_pi/libs/ilclient -lilclient
 
 LDFLAGS =  $(DMX_LIBS) $(EGL_LIBS) $(OMX_LIBS) $(OMX_ILCLIENT_LIBS)
 
-#is linking needed at this stage?
+#is linking needed at this stage? - aparently not
 print_OMX.o : print_OMX.c print_OMX.h
 	cc -c print_OMX.c $(CFLAGS) 
 

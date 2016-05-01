@@ -36,23 +36,14 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 
 #include "bcm_host.h"
 #include "ilclient.h"
+
 #include "print_OMX.h"
 #include "socket_helper.h"
+#include "rcam.h"
 
-//#define IP_ADD "127.0.0.1"
-#define IP_ADD "192.168.0.13"
+#define IP_ADD "127.0.0.1"
+//#define IP_ADD "192.168.0.13"
 #define SERV_PORT "8039"
-
-//possibly put this enum in a header file to easily include in other programs
-enum rcam_command
-{
-    NO_COMMAND = 0,
-    SET_PREVIEW_RES = 10,
-    SET_PREVIEW_FRAMERATE = 11,
-    START_PREVIEW = 20,
-    STOP_PREVIEW = 21,
-    TAKE_PHOTO = 30
-};
 
 ////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
