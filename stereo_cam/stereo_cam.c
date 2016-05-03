@@ -57,12 +57,32 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   ILCLIENT_T *client;
-  COMPONENT_T *video_render = NULL;
+
+  //local camera variables
+  COMPONENT_T *local_cam = NULL, *local_video_render = NULL;
+  TUNNEL_T tunnel_local_cam_to_local_video_render;
+  memset(&tunnel_local_cam_to_local_video_render, 0, sizeof(tunnel_local_cam_to_local_video_render));
+
+  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
+  memset(&render_config, 0, sizeof(render_config));
+  render_config.nVersion.nVersion = OMX_VERSION;
+  render_config.nSize = sizeof(render_config);
+  render_config.nPortIndex = 90;
+
+  OMX_PARAMPORTDEFINATIONTYPE port_params;
+  memset(&port_params, 0, sizeof(port_params));
+  port_params.nVersion.nVersion = OMX_VERSION;
+  port_params.nSize = sizeof(port_params);
+  port_params.nPortIndex = 72;
+
+  //client components
+  COMPONENT_T *client_video_render = NULL;
 
   OMX_ERRORTYPE OMXstatus;
 
   uint32_t screen_width = 0, screen_height = 0;
-  OMX_BUFFERHEADERTYPE *video_render_in;
+
+  OMX_BUFFERHEADERTYPE *client_video_camera_in;
 
   int numbytes;
   char char_buffer[12];
@@ -140,22 +160,6 @@ int main(int argc, char *argv[])
 
   printf("socket = %d\n", socket_fd);
   printf("new_sock = %d", new_sock);
-  /////////////////////////////////////////////////////////////////
-  // FORK
-  /////////////////////////////////////////////////////////////////
-#ifdef FORK
-
-  pid_t pid;
-
-  pid = fork();
-  if (pid == 0)
-    printf("in child process!!!\n");  //call a fuction etc
-  if (pid < 0)
-    fprintf(stderr, "Fork failed!\n");
-  else /* if pid > 0 */
-    printf("in main process\n");
-
-#endif
 
   /////////////////////////////////////////////////////////////////
   // STARTUP
@@ -199,12 +203,12 @@ int main(int argc, char *argv[])
   ////Initialise video render////
   ///////////////////////////////////////////
   ilclient_create_component(client,
-			    &video_render,
-			    "video_render",
+			    &client_video_camera,
+			    "client_video_camera",
 			    ILCLIENT_DISABLE_ALL_PORTS
 			    | ILCLIENT_ENABLE_INPUT_BUFFERS);
 
-  OMXstatus = ilclient_change_component_state(video_render, OMX_StateIdle);
+  OMXstatus = ilclient_change_component_state(client_video_camera, OMX_StateIdle);
   if (OMXstatus != OMX_ErrorNone)
     {
       fprintf(stderr, "unable to move render component to Idle (1)\n");
@@ -215,7 +219,7 @@ int main(int argc, char *argv[])
 
   int width = 320, height = 240;
 
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(video_render), OMX_IndexParamPortDefinition, &render_params);
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_camera), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting video render port parameters (1)");
 
@@ -226,7 +230,7 @@ int main(int argc, char *argv[])
   render_params.format.video.nSliceHeight = height;
   render_params.format.video.xFramerate = 24 << 16;
 
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexParamPortDefinition, &render_params);
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_camera), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
 
@@ -236,7 +240,7 @@ int main(int argc, char *argv[])
   render_params.nSize = sizeof(render_params);
   render_params.nPortIndex = 90;
 
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(video_render), OMX_IndexParamPortDefinition, &render_params);
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_camera), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting video render port parameters (1)");
 
@@ -256,15 +260,15 @@ int main(int argc, char *argv[])
 
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
 
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_camera), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
   */
 
-  //ask ilclient to allocate buffers for video_render
-  printf("enable video_render_input port\n");
-  ilclient_enable_port_buffers(video_render, 90, NULL, NULL,  NULL);
-  ilclient_enable_port(video_render, 90);
+  //ask ilclient to allocate buffers for client_video_camera
+  printf("enable client_video_camera_input port\n");
+  ilclient_enable_port_buffers(client_video_camera, 90, NULL, NULL,  NULL);
+  ilclient_enable_port(client_video_camera, 90);
 
 
   /*
@@ -276,7 +280,7 @@ int main(int argc, char *argv[])
   render_config.nPortIndex = 90;
   render_config.set = OMX_DISPLAY_SET_DUMMY;
 
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_camera), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Getting Config. Error = %s\n", err2str(OMXstatus));
   print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
@@ -288,14 +292,14 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   //change preview render to executing
-  OMXstatus = ilclient_change_component_state(video_render, OMX_StateExecuting);
+  OMXstatus = ilclient_change_component_state(client_video_camera, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
     {
       fprintf(stderr, "unable to move video render component to Executing (1)\n");
       exit(EXIT_FAILURE);
     }
-  printf("video_render state is ");
-  printState(ilclient_get_handle(video_render));
+  printf("client_video_camera state is ");
+  printState(ilclient_get_handle(client_video_camera));
   printf("***\n");
 
   ////////////////////////////////////////////////////////////
@@ -327,7 +331,7 @@ int main(int argc, char *argv[])
 
   while(count < 100)
     {
-      printState(ilclient_get_handle(video_render));
+      printState(ilclient_get_handle(client_video_camera));
       count++;
       printf("count = %d\n", count);
 
@@ -345,14 +349,14 @@ int main(int argc, char *argv[])
       printf("buffer recived, recived %ld bytes\n", num_bytes);
       
       //change nAllocLen in bufferheader
-      video_render_in = ilclient_get_input_buffer(video_render, 90, 1);
-      memcpy(video_render_in->pBuffer, temp_buffer, render_params.nBufferSize);
-      printf("copied buffer form temp into video_render_in\n");
+      client_video_camera_in = ilclient_get_input_buffer(client_video_camera, 90, 1);
+      memcpy(client_video_camera_in->pBuffer, temp_buffer, render_params.nBufferSize);
+      printf("copied buffer form temp into client_video_camera_in\n");
       //fix alloc len
-      video_render_in->nFilledLen = render_params.nBufferSize;
+      client_video_camera_in->nFilledLen = render_params.nBufferSize;
 
       //empty buffer into render component
-      OMX_EmptyThisBuffer(ilclient_get_handle(video_render), video_render_in);
+      OMX_EmptyThisBuffer(ilclient_get_handle(client_video_camera), client_video_camera_in);
       printf("Emptied buffer\n");
 
       //send no command
