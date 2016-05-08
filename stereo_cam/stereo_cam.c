@@ -317,11 +317,7 @@ int main(int argc, char *argv[])
     }
   printState(ilclient_get_handle(local_video_render));
 
-  
-  
-
-  
-  
+    
   ///////////////////////////////////////////
   ////Initialise client video render////
   ///////////////////////////////////////////
@@ -370,7 +366,6 @@ int main(int argc, char *argv[])
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
 
   //set the position on the screen
-  /*
   render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
 					   |OMX_DISPLAY_SET_FULLSCREEN
 					   |OMX_DISPLAY_SET_NOASPECT
@@ -380,13 +375,14 @@ int main(int argc, char *argv[])
 
   render_config.dest_rect.width = screen_width/2;
   render_config.dest_rect.height = screen_height;
-
+  render_config.dest_rect.x_offset = screen_width/2;
+  
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
 
   OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
-  */
+  
 
   //ask ilclient to allocate buffers for client_video_render
   printf("enable client_video_render_input port\n");
