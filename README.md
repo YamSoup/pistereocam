@@ -7,5 +7,5 @@ The IP's are hard coded atm and the remote cam needs to be pointed to the stereo
 This will be changed.
 
 The Makefiles are very raw at the moment 
-currently you need to build each "lib" seperatly (and the ilclient lib in the /opt)
+currently you need to build each "lib" seperatly (and the ilclient lib in the /opt/vc/src/hello_pi/libs/ilclient)
 and then build remote_cam and stereo_cam seperatly.
