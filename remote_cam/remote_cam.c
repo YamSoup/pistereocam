@@ -42,7 +42,7 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 #include "rcam.h"
 
 //#define IP_ADD "127.0.0.1"
-#define IP_ADD "192.168.0.12"
+#define IP_ADD "192.168.0.21"
 #define SERV_PORT "8039"
 
 ////////////////////////////////////////////////////////////////
