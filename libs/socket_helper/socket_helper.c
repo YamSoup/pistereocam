@@ -21,10 +21,19 @@ This is pretty basic as I am new to this
 
 #include "socket_helper.h"
 
+//TODO create 2 server side functions
+// 1 to create a socket and bind
+// 2 to listen and accept on created socket
+// use current stereo_cam.c as template
+// is this TCP only?
+int getAndBindServerSocket(int socket_type, char* port);
+
+int listenAndAcceptServerSocket(int socket_to_listen_on, int backlog);
+
 //returns a bound socket
 int getAndConnectSocket(int socket_type, char* address, char* port)
 {
-  int sockfd;
+  int socket_fd;
   struct addrinfo hints, *servinfo, *p;
   int return_value = 0;
 
@@ -38,7 +47,7 @@ int getAndConnectSocket(int socket_type, char* address, char* port)
     hints.ai_socktype = SOCK_STREAM;
   else
     {
-      printf("oops\n");
+      printf("unknown socket type\n");
       return -2;
     }
 
@@ -54,14 +63,14 @@ int getAndConnectSocket(int socket_type, char* address, char* port)
   for(p = servinfo; p != NULL; p = p->ai_next)
     {
       //attempt get socket
-      sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-      if(sockfd == -1)
+      socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+      if(socket_fd == -1)
 	{
 	  fprintf(stderr, "Error using socket function\n");
 	  continue;
 	}
       //attempt connect on socket! (will bind socket to free port automatically)
-      return_value = connect(sockfd, p->ai_addr, p->ai_addrlen);
+      return_value = connect(socket_fd, p->ai_addr, p->ai_addrlen);
       if(return_value == -1)
 	{
 	  fprintf(stderr, "Error connecting to socket\n");
@@ -78,7 +87,7 @@ int getAndConnectSocket(int socket_type, char* address, char* port)
     }
 
   freeaddrinfo(servinfo);
-  return sockfd;
+  return socket_fd;
 }
 
 //write all (to ensure full buffer is sent)

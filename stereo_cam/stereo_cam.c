@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   // SOCKET STUFF
   /////////////////////////////////////////////////////////////////
   printf("start of socket stuff");
-  
+
   //socket stuctures and vars and stuff
   int socket_fd, new_sock;
   struct addrinfo hints, *results;
@@ -145,16 +145,16 @@ int main(int argc, char *argv[])
   freeaddrinfo(results);
 
   printf("waiting for remotecam to connect");
-  
+
   //listen
-  if (listen(socket_fd, 10) == -1)
+  if (listen(socket_fd, 10/*backlog*/) == -1)
     {
       fprintf(stderr, "listen failed");
       exit(EXIT_FAILURE);
     }
 
   //accept
-  new_sock = accept(socket_fd, (struct sockaddr *) &remote_cam_addr, &addr_size); 
+  new_sock = accept(socket_fd, (struct sockaddr *) &remote_cam_addr, &addr_size);
   if(new_sock < 0)
     printf("error accepting socket, error = %s", strerror(errno));
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "unable to move local_camera to Idle (1)");
       exit(EXIT_FAILURE);
     }
-  
+
   //change the preview resolution of local_camera using structure local_port_params
   OMXstatus = OMX_GetParameter(ilclient_get_handle(local_camera),
 			       OMX_IndexParamPortDefinition,
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 	      err2str(OMXstatus));
       exit(EXIT_FAILURE);
     }
-  
+
   local_port_params.format.video.nFrameWidth = 320;
   local_port_params.format.video.nFrameHeight = 240;
   local_port_params.format.video.nStride = 0;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     }
   printState(ilclient_get_handle(local_video_render));
 
-    
+
   ///////////////////////////////////////////
   ////Initialise client video render////
   ///////////////////////////////////////////
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "unable to move render component to Idle (1)\n");
       exit(EXIT_FAILURE);
     }
-    
+
   //set the port params to the same as the remote camera
 
   int width = 320, height = 240;
@@ -376,13 +376,13 @@ int main(int argc, char *argv[])
   render_config.dest_rect.width = screen_width/2;
   render_config.dest_rect.height = screen_height;
   render_config.dest_rect.x_offset = screen_width/2;
-  
+
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
 
   OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
-  
+
 
   //ask ilclient to allocate buffers for client_video_render
   printf("enable client_video_render_input port\n");
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
   ////////////////////////////////////////////////////////////
   // SEND AND RECV
   ////////////////////////////////////////////////////////////
-  
+
   //handshake
   printf("waiting to recive handshake ... \n");
   read(new_sock, char_buffer, 11);
@@ -432,18 +432,18 @@ int main(int argc, char *argv[])
   write(new_sock, "got\0", sizeof(char)*4);
 
   void * temp_buffer;
-  temp_buffer = malloc(render_params.nBufferSize + 1 );  
+  temp_buffer = malloc(render_params.nBufferSize + 1 );
 
   int count = 0;
   long int num_bytes = 0;
-  enum rcam_command current_command = START_PREVIEW; 
+  enum rcam_command current_command = START_PREVIEW;
 
   printf("current_command = %d\n", current_command);
 
   printf("sending command ...");
   write(new_sock, &current_command, sizeof(current_command));
   printf("sent command\n");
-  
+
   current_command = NO_COMMAND;
 
   printf("*** nBufferSize = %d\n", render_params.nBufferSize);
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 			    render_params.nBufferSize - num_bytes);
 	}
       printf("buffer recived, recived %ld bytes\n", num_bytes);
-      
+
       //change nAllocLen in bufferheader
       client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
       memcpy(client_video_render_in->pBuffer, temp_buffer, render_params.nBufferSize);
@@ -479,10 +479,10 @@ int main(int argc, char *argv[])
       printf("Emptied buffer\n");
 
       //send no command
-      write(new_sock, &current_command, sizeof(current_command));      
+      write(new_sock, &current_command, sizeof(current_command));
     }
-      
-  
+
+
   putchar('\n');
 
   //sleep for 2 secs
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 
   //free buffer memory
   free(temp_buffer);
-  
+
   //Disable components
 
 
