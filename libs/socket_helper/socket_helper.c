@@ -77,15 +77,15 @@ int listenAndAcceptTCPServerSocket(int socket_to_listen_on, int backlog)
   socket_status = listen(socket_to_listen_on, 10/*backlog*/);
   if (socket_status == -1)
     {
-      fprintf(stderr, "error on socket listen");
+      fprintf(stderr, "error on socket listen\n");
       exit(EXIT_FAILURE);
     }
   
   //accept
   accepted_socket = accept(socket_to_listen_on, (struct sockaddr *) &client_addr, &addr_size);
-  if(accepted_socket <= 0)
+  if(accepted_socket < 0)
     {
-      fprintf(stderr, "error accepting socket");
+      fprintf(stderr, "error accepting socket\n");
       exit(EXIT_FAILURE);
     }
 
