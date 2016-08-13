@@ -30,8 +30,6 @@ int getAndBindTCPServerSocket(char* port)
 {
   int socket_fd;
   struct addrinfo hints, *results;
-  struct sockaddr_storage client_addr;
-  socklen_t addr_size = sizeof(client_addr);
   int socket_status = 0;
 
   memset(&hints, 0, sizeof hints);
@@ -40,10 +38,10 @@ int getAndBindTCPServerSocket(char* port)
   hints.ai_flags = AI_PASSIVE;
 
   // getaddrinfo
-  socket_status = getaddrinfo(NULL, PORT, &hints, &results);
+  socket_status = getaddrinfo(NULL, port, &hints, &results);
   if(socket_status != 0)
     {
-      fprintf(stderr, "getaddrinfo failed, error = %s\n", gai_stderror(socket_status));
+      fprintf(stderr, "getaddrinfo failed, error = %s\n", gai_strerror(socket_status));
       exit(EXIT_FAILURE);
     }
 
@@ -51,7 +49,7 @@ int getAndBindTCPServerSocket(char* port)
   socket_fd = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
   if(socket_fd <= 0)
     {
-      fprintf(stderr, "socket failed\n");
+      fprintf(stderr, "socket call failed\n");
       exit(EXIT_FAILURE);
     }
 
@@ -59,7 +57,7 @@ int getAndBindTCPServerSocket(char* port)
   socket_status = bind(socket_fd, results->ai_addr, results->ai_addrlen);
   if(socket_status != 0)
     {
-      fprintf(stderr, "bind failed, error = %s\n", gai_stderror(socket_status));
+      fprintf(stderr, "bind call failed, error = %s\n", gai_strerror(socket_status));
       exit(EXIT_FAILURE);
     }
 
@@ -67,16 +65,35 @@ int getAndBindTCPServerSocket(char* port)
 
   return socket_fd;
 }
-//BIG PROBLEM the socket address size is an issue if I want these as 2 seperate functions!!
 
-
-
-int listenAndAcceptTCPServerSocket(int socket_to_listen_on, int backlog);
+int listenAndAcceptTCPServerSocket(int socket_to_listen_on, int backlog)
 {
+  int accepted_socket = 0;
+  struct sockaddr_storage client_addr;
+  socklen_t addr_size = sizeof(client_addr);
+  int socket_status = 0;
   
+  //listen
+  socket_status = listen(socket_to_listen_on, 10/*backlog*/);
+  if (socket_status == -1)
+    {
+      fprintf(stderr, "error on socket listen");
+      exit(EXIT_FAILURE);
+    }
+  
+  //accept
+  accepted_socket = accept(socket_to_listen_on, (struct sockaddr *) &client_addr, &addr_size);
+  if(accepted_socket <= 0)
+    {
+      fprintf(stderr, "error accepting socket");
+      exit(EXIT_FAILURE);
+    }
+
+  //return the new socket
+  return accepted_socket;
 }
 
-//returns a bound socket
+//returns a bound socket for client
 int getAndConnectTCPSocket(char* address, char* port)
 {
   int socket_fd;

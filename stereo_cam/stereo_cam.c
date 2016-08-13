@@ -104,6 +104,11 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
   printf("start of socket stuff");
 
+  int socket_fd = 0, new_sock = 0;
+  
+  socket_fd = getAndBindTCPServerSocket(PORT);
+  
+  /*
   //socket stuctures and vars and stuff
   int socket_fd, new_sock;
   struct addrinfo hints, *results;
@@ -141,13 +146,18 @@ int main(int argc, char *argv[])
       fprintf(stderr, "bind failed\n");
       exit(EXIT_FAILURE);
     }
-
+  
   freeaddrinfo(results);
 
+  */
+  
   printf("waiting for remotecam to connect");
 
+  new_sock = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
+  
+  /*
   //listen
-  if (listen(socket_fd, 10/*backlog*/) == -1)
+  if (listen(socket_fd, 10) == -1)
     {
       fprintf(stderr, "listen failed");
       exit(EXIT_FAILURE);
@@ -157,6 +167,8 @@ int main(int argc, char *argv[])
   new_sock = accept(socket_fd, (struct sockaddr *) &remote_cam_addr, &addr_size);
   if(new_sock < 0)
     printf("error accepting socket, error = %s", strerror(errno));
+
+  */
 
   printf("socket = %d\n", socket_fd);
   printf("new_sock = %d", new_sock);
