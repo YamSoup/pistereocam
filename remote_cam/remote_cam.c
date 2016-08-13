@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //SOCKET STUFF
-    socket_fd = getAndConnectSocket(SOCKTYPE_TCP, IP_ADD, SERV_PORT);
+    socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
     if (socket_fd < 0)
       {
 	printf("socket failure\n");

@@ -13,7 +13,7 @@ This is pretty basic as I am new to this
 #define SOCKTYPE_UDP 2
 
 //returns a bound socket
-int getAndConnectSocket(int socket_type, char* address, char* port);
+int getAndConnectTCPSocket(char* address, char* port);
 
 //write all and read all (to ensure full buffer is sent)
 void write_all(int socket, const void *buf, size_t num_bytes);

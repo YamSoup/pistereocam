@@ -26,30 +26,66 @@ This is pretty basic as I am new to this
 // 2 to listen and accept on created socket
 // use current stereo_cam.c as template
 // is this TCP only?
-int getAndBindServerSocket(int socket_type, char* port);
+int getAndBindTCPServerSocket(char* port)
+{
+  int socket_fd;
+  struct addrinfo hints, *results;
+  struct sockaddr_storage client_addr;
+  socklen_t addr_size = sizeof(client_addr);
+  int socket_status = 0;
 
-int listenAndAcceptServerSocket(int socket_to_listen_on, int backlog);
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+
+  // getaddrinfo
+  socket_status = getaddrinfo(NULL, PORT, &hints, &results);
+  if(socket_status != 0)
+    {
+      fprintf(stderr, "getaddrinfo failed, error = %s\n", gai_stderror(socket_status));
+      exit(EXIT_FAILURE);
+    }
+
+  //socket
+  socket_fd = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
+  if(socket_fd <= 0)
+    {
+      fprintf(stderr, "socket failed\n");
+      exit(EXIT_FAILURE);
+    }
+
+  // bind
+  socket_status = bind(socket_fd, results->ai_addr, results->ai_addrlen);
+  if(socket_status != 0)
+    {
+      fprintf(stderr, "bind failed, error = %s\n", gai_stderror(socket_status));
+      exit(EXIT_FAILURE);
+    }
+
+  freeaddrinfo(results);
+
+  return socket_fd;
+}
+//BIG PROBLEM the socket address size is an issue if I want these as 2 seperate functions!!
+
+
+
+int listenAndAcceptTCPServerSocket(int socket_to_listen_on, int backlog);
+{
+  
+}
 
 //returns a bound socket
-int getAndConnectSocket(int socket_type, char* address, char* port)
+int getAndConnectTCPSocket(char* address, char* port)
 {
   int socket_fd;
   struct addrinfo hints, *servinfo, *p;
   int return_value = 0;
 
-  printf("%d", socket_type);
-
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
-  if(socket_type == SOCKTYPE_UDP)
-    hints.ai_socktype = SOCK_DGRAM;
-  else if(socket_type == SOCKTYPE_TCP)
-    hints.ai_socktype = SOCK_STREAM;
-  else
-    {
-      printf("unknown socket type\n");
-      return -2;
-    }
+  hints.ai_socktype = SOCK_STREAM;
 
   //use getaddrinfo to populate servinfo
   return_value = getaddrinfo(address, port, &hints, &servinfo);
