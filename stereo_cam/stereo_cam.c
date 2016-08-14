@@ -102,76 +102,17 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
   // SOCKET STUFF
   /////////////////////////////////////////////////////////////////
-  printf("start of socket stuff");
+  printf("start of socket stuff\n");
 
-  int socket_fd = 0, new_sock = 0;
-  
+  int socket_fd = 0, client_socket_fd = 0;
   socket_fd = getAndBindTCPServerSocket(PORT);
   
-  /*
-  //socket stuctures and vars and stuff
-  int socket_fd, new_sock;
-  struct addrinfo hints, *results;
-  struct sockaddr_storage remote_cam_addr;
-  socklen_t addr_size = sizeof(remote_cam_addr);
-  int socket_status = 0, result;
+  printf("waiting for remotecam to connect\n");
 
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
+  client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
 
-  // getaddrinfo
-  socket_status = getaddrinfo(NULL, PORT, &hints, &results);
-  if(socket_status != 0)
-    {
-      fprintf(stderr, "getaddrinfo failed, error = %s\n", gai_strerror(socket_status));
-      exit(EXIT_FAILURE);
-    }
-
-  printf("results->ai_protocol = %d", results->ai_protocol);
-
-  // socket
-  socket_fd = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
-  if(socket_fd <= 0)
-    {
-      fprintf(stderr, "socket failed\n");
-      exit(EXIT_FAILURE);
-    }
-
-  // bind
-  socket_status = bind(socket_fd, results->ai_addr, results->ai_addrlen);
-  if(socket_status != 0)
-    {
-      fprintf(stderr, "bind failed\n");
-      exit(EXIT_FAILURE);
-    }
-  
-  freeaddrinfo(results);
-
-  */
-  
-  printf("waiting for remotecam to connect");
-
-  new_sock = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
-  
-  /*
-  //listen
-  if (listen(socket_fd, 10) == -1)
-    {
-      fprintf(stderr, "listen failed");
-      exit(EXIT_FAILURE);
-    }
-
-  //accept
-  new_sock = accept(socket_fd, (struct sockaddr *) &remote_cam_addr, &addr_size);
-  if(new_sock < 0)
-    printf("error accepting socket, error = %s", strerror(errno));
-
-  */
-
-  printf("socket = %d\n", socket_fd);
-  printf("new_sock = %d", new_sock);
+  printf("socket_fd = %d\n", socket_fd);
+  printf("client_socket_fd = %d\n", client_socket_fd);
 
   /////////////////////////////////////////////////////////////////
   // STARTUP
@@ -439,9 +380,9 @@ int main(int argc, char *argv[])
 
   //handshake
   printf("waiting to recive handshake ... \n");
-  read(new_sock, char_buffer, 11);
+  read(client_socket_fd, char_buffer, 11);
   printf("handshake result = %s", char_buffer);
-  write(new_sock, "got\0", sizeof(char)*4);
+  write(client_socket_fd, "got\0", sizeof(char)*4);
 
   void * temp_buffer;
   temp_buffer = malloc(render_params.nBufferSize + 1 );
@@ -453,7 +394,7 @@ int main(int argc, char *argv[])
   printf("current_command = %d\n", current_command);
 
   printf("sending command ...");
-  write(new_sock, &current_command, sizeof(current_command));
+  write(client_socket_fd, &current_command, sizeof(current_command));
   printf("sent command\n");
 
   current_command = NO_COMMAND;
@@ -468,12 +409,12 @@ int main(int argc, char *argv[])
 
       printf("get a buffer to process\n");
       printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
-      num_bytes = read(new_sock,
+      num_bytes = read(client_socket_fd,
 		       temp_buffer,
 		       render_params.nBufferSize);
       while (num_bytes < render_params.nBufferSize)
 	{
-	  num_bytes += read(new_sock,
+	  num_bytes += read(client_socket_fd,
 			    temp_buffer + num_bytes,
 			    render_params.nBufferSize - num_bytes);
 	}
@@ -491,7 +432,7 @@ int main(int argc, char *argv[])
       printf("Emptied buffer\n");
 
       //send no command
-      write(new_sock, &current_command, sizeof(current_command));
+      write(client_socket_fd, &current_command, sizeof(current_command));
     }
 
 
