@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
   local_port_params.nSize = sizeof(local_port_params);
   local_port_params.nPortIndex = 72;
 
-  //client components
+  //client camera variables
   COMPONENT_T *client_video_render = NULL;
 
   OMX_ERRORTYPE OMXstatus;
@@ -147,7 +147,12 @@ int main(int argc, char *argv[])
   graphics_get_display_size(0/*framebuffer 0*/, &screen_width, &screen_height);
   printf("screen_width = %d, screen_height = %d\n", (int)screen_width, (int)screen_height);
 
+  int testResult;
+  printf("/n/nstarting testy test\n");
+  testResult = testFunction(client);
+  printf("test result = %d\n\n\n", testResult);
 
+  
   /////////////////////////////////////////////////////////////////
   // Initalize Components
   /////////////////////////////////////////////////////////////////

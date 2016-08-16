@@ -3,6 +3,9 @@
 #ifndef _RCAM_H
 #define _RCAM_H
 
+#include "bcm_host.h"
+#include "ilclient.h"
+
 /////////////////////////////////////////////////////////////////
 // Data Stuctures
 
@@ -19,6 +22,6 @@ enum rcam_command
 /////////////////////////////////////////////////////////////////
 // Function Prototypes
 
+int testFunction(ILCLIENT_T *client);
 
-
-#endif /* _RCAM_H */
+#endif // _RCAM_H
