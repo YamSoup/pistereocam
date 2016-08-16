@@ -29,6 +29,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <pthread.h>
+
 #include "bcm_host.h"
 #include "ilclient.h"
 
