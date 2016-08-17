@@ -41,6 +41,13 @@ Somehow needs to take a photo as well?
 not really sure how to control once started?
 unsure if this is possible - possibly by creating a global context to control the loop??
 
+as a function that needs to be a thread this can only have 1 argument
+and so will need a pointer to a struct containing all the needed parameters.
+the struct should go into a header.
+
+also a "global variable" will be needed to control the camera and mutex to control the the variable from both sides
+either that or possibly a semephore to control the state
+
 The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
 int serverStartRcam(ILCLIENT_T *client, int previewWidth, int previewHeight, int displayType);
