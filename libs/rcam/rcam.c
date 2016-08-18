@@ -50,4 +50,21 @@ either that or possibly a semephore to control the state
 
 The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
-int serverStartRcam(ILCLIENT_T *client, int previewWidth, int previewHeight, int displayType);
+int initServerRcam(void *VoidPtrArgs)
+{
+  struct rcamThreadArgs *currentArgs = VoidPtrArgs;
+
+  printf("passed arguments\npreviewWidth: %d\n", currentArgs->previewWidth);
+}
+
+// does not need to have void pointer attribute as will run in main thread
+// This is a template Function for all Functions that will control rcam like take photo
+// this will be achived by changing shared memory to control the loop in initServerRcam
+int exampleVariableChanger (pthread_mutex_t *mutexPtr, sharedMemoryStruct *toChange)
+{
+  //does not need to be &mutexPtr as is passed as a pointer
+  // this is an atempt to not declare it globally
+  pthread_mutex_lock(mutexPtr); 
+  toChange->variable = value;
+  pthread_mutex_unlock(mutexPtr);
+}

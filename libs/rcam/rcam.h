@@ -19,9 +19,21 @@ enum rcam_command
     TAKE_PHOTO = 30
 };
 
+//needed as a thread can only be passed 1 argument
+struct rcamThreadArgs
+{
+  ILCLIENT_T *client;
+  int previewWidth;
+  int previewHeight;
+  int displayType;
+}
+
+
 /////////////////////////////////////////////////////////////////
 // Function Prototypes
 
 int testFunction(ILCLIENT_T *client);
+
+int InitServerRcam(void *VoidPtrArgs);
 
 #endif // _RCAM_H
