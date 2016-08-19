@@ -53,18 +53,130 @@ The display type selects if the preview runs full screen. or on the left or righ
 int initServerRcam(void *VoidPtrArgs)
 {
   struct rcamThreadArgs *currentArgs = VoidPtrArgs;
+  printf("cameraControl\npreviewWidth: %d\n", currentArgs->previewWidth);
 
-  printf("passed arguments\npreviewWidth: %d\n", currentArgs->previewWidth);
+  //client variables
+  COMPONENT_T *client_video_render = NULL;
+  OMX_ERRORTYPE OMXstatus;
+
+  OMX_BUFFERHEADERTYPE *client_video_render_in;
+
+  int numbytes;
+  char char_buffer[12];
+
+  OMX_PARAM_PORTDEFINITIONTYPE render_params;
+  memset(&render_params, 0, sizeof(render_params));
+  render_params.nVersion.nVersion = OMX_VERSION;
+  render_params.nSize = sizeof(render_params);
+  render_params.nPortIndex = 90;
+
+  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
+  memset(&render_config, 0, sizeof(render_config));
+  render_config.nVersion.nVersion = OMX_VERSION;
+  render_config.nSize = sizeof(render_config);
+  render_config.nPortIndex = 90;
+
+
+  ///////////////////////////////////////////
+  ////Initialise client video render////
+  ///////////////////////////////////////////
+  ilclient_create_component(client,
+			    &client_video_render,
+			    "video_render",
+			    ILCLIENT_DISABLE_ALL_PORTS
+			    | ILCLIENT_ENABLE_INPUT_BUFFERS);
+
+  OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateIdle);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move render component to Idle (1)\n");
+      exit(EXIT_FAILURE);
+    }
+
+  //set the port params to the same as the remote camera
+
+  int width = 320, height = 240;
+
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Getting video render port parameters (1)");
+
+  render_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  render_params.format.video.nFrameWidth = width;
+  render_params.format.video.nFrameHeight = height;
+  render_params.format.video.nStride = width;
+  render_params.format.video.nSliceHeight = height;
+  render_params.format.video.xFramerate = 24 << 16;
+
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Setting video render port parameters (1)");
+
+  //check the port params
+  memset(&render_params, 0, sizeof(render_params));
+  render_params.nVersion.nVersion = OMX_VERSION;
+  render_params.nSize = sizeof(render_params);
+  render_params.nPortIndex = 90;
+
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Getting video render port parameters (1)");
+
+  print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
+
+  //set the position on the screen
+  render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
+					   |OMX_DISPLAY_SET_FULLSCREEN
+					   |OMX_DISPLAY_SET_NOASPECT
+					   |OMX_DISPLAY_SET_MODE);
+  render_config.fullscreen = OMX_FALSE;
+  render_config.noaspect = OMX_FALSE;
+
+  render_config.dest_rect.width = screen_width/2;
+  render_config.dest_rect.height = screen_height;
+  render_config.dest_rect.x_offset = screen_width/2;
+
+  render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
+
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
+
+
+  //ask ilclient to allocate buffers for client_video_render
+  printf("enable client_video_render_input port\n");
+  ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
+  ilclient_enable_port(client_video_render, 90);
+
+
+  /*
+  DOES NOT WORK LEAVING AS A REMINDER
+
+  memset(&render_config, 0, sizeof(render_config));
+  render_config.nVersion.nVersion = OMX_VERSION;
+  render_config.nSize = sizeof(render_config);
+  render_config.nPortIndex = 90;
+  render_config.set = OMX_DISPLAY_SET_DUMMY;
+
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Config. Error = %s\n", err2str(OMXstatus));
+  print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
+  */
+
+  
+
+  
 }
 
 // does not need to have void pointer attribute as will run in main thread
 // This is a template Function for all Functions that will control rcam like take photo
 // this will be achived by changing shared memory to control the loop in initServerRcam
-int exampleVariableChanger (pthread_mutex_t *mutexPtr, sharedMemoryStruct *toChange)
+int exampleVariableChanger (cameraControl *toChange)
 {
   //does not need to be &mutexPtr as is passed as a pointer
   // this is an atempt to not declare it globally
-  pthread_mutex_lock(mutexPtr); 
+  pthread_mutex_lock(&toChange->mutexPtr); /*check this would actually work*/ 
   toChange->variable = value;
-  pthread_mutex_unlock(mutexPtr);
+  pthread_mutex_unlock(&toChange->mutexPtr);
 }

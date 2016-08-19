@@ -20,14 +20,27 @@ enum rcam_command
 };
 
 //needed as a thread can only be passed 1 argument
-struct rcamThreadArgs
+struct cameraControl
 {
   ILCLIENT_T *client;
+  pthread_mutex_t mutexPtr = PTHREAD_MUTEX_INITALIZER;
+  //preview
+  bool previewRunning;
+  bool previewchanged;
   int previewWidth;
   int previewHeight;
+  //photo
+  bool takePhoto;
+  bool photoChanged;
+  int photoHeight;
+  int photoWidth;
+  //display (renderer)
+  bool displayChanged;
   int displayType;
+  /*
+  future implementations may change things like brightness etc
+   */
 }
-
 
 /////////////////////////////////////////////////////////////////
 // Function Prototypes
