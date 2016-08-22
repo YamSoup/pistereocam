@@ -37,6 +37,8 @@ struct cameraControl
   //display (renderer)
   bool displayChanged;
   int displayType;
+  int screenWidth;
+  int screenHeight
   /*
   future implementations may change things like brightness etc
    */
