@@ -5,6 +5,9 @@
 
 #include "bcm_host.h"
 #include "ilclient.h"
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 /////////////////////////////////////////////////////////////////
 // Data Stuctures
@@ -23,7 +26,7 @@ enum rcam_command
 struct cameraControl
 {
   ILCLIENT_T *client;
-  pthread_mutex_t mutexPtr = PTHREAD_MUTEX_INITALIZER;
+  pthread_mutex_t mutexPtr;
   //preview
   bool previewRunning;
   bool previewchanged;
@@ -38,11 +41,11 @@ struct cameraControl
   bool displayChanged;
   int displayType;
   int screenWidth;
-  int screenHeight
+  int screenHeight;
   /*
   future implementations may change things like brightness etc
    */
-}
+};
 
 /////////////////////////////////////////////////////////////////
 // Function Prototypes

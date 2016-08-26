@@ -1,8 +1,6 @@
 //place holder for remote cam helper funstions
 
 #include "rcam.h"
-#include "bcm_host.h"
-#include "ilclient.h"
 
 /*
 what do I want from this
@@ -51,8 +49,10 @@ either that or possibly a semephore to control the state
 The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
 int initServerRcam(void *VoidPtrArgs)
-{
-  struct rcamThreadArgs *currentArgs = VoidPtrArgs;
+{    
+  struct cameraControl *currentArgs = VoidPtrArgs;
+  ILCLIENT_T *client = currentArgs->client;
+
   printf("cameraControl\npreviewWidth: %d\n", currentArgs->previewWidth);
 
   ///////////////////////////////////////////
@@ -132,9 +132,9 @@ int initServerRcam(void *VoidPtrArgs)
   render_config.fullscreen = OMX_FALSE;
   render_config.noaspect = OMX_FALSE;
 
-  render_config.dest_rect.width = cameraControl->screen_width/2;
-  render_config.dest_rect.height = cameraControl->screen_height;
-  render_config.dest_rect.x_offset = cameraControl->screen_width/2;
+  render_config.dest_rect.width = currentArgs->screen_width/2;
+  render_config.dest_rect.height = currentArgs->screen_height;
+  render_config.dest_rect.x_offset = currentArgs->screen_width/2;
 
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
 
