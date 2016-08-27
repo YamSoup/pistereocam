@@ -1,6 +1,15 @@
-//place holder for remote cam helper funstions
-
 #include "rcam.h"
+
+#include "bcm_host.h"
+#include "ilclient.h"
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <pthread.h>
+
+#include "print_OMX.h"
+#include "socket_helper.h"
+
 
 /*
 what do I want from this
@@ -132,9 +141,9 @@ int initServerRcam(void *VoidPtrArgs)
   render_config.fullscreen = OMX_FALSE;
   render_config.noaspect = OMX_FALSE;
 
-  render_config.dest_rect.width = currentArgs->screen_width/2;
-  render_config.dest_rect.height = currentArgs->screen_height;
-  render_config.dest_rect.x_offset = currentArgs->screen_width/2;
+  render_config.dest_rect.width = currentArgs->screenWidth/2;
+  render_config.dest_rect.height = currentArgs->screenHeight;
+  render_config.dest_rect.x_offset = currentArgs->screenWidth/2;
 
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
 
@@ -164,6 +173,16 @@ int initServerRcam(void *VoidPtrArgs)
   print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
   */
 
+  //change preview render to executing
+  OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateExecuting);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move video render component to Executing (1)\n");
+      exit(EXIT_FAILURE);
+    }
+  printf("client_video_render state is ");
+  printState(ilclient_get_handle(client_video_render));
+  printf("***\n");
 
 
 
@@ -172,11 +191,14 @@ int initServerRcam(void *VoidPtrArgs)
 // does not need to have void pointer attribute as will run in main thread
 // This is a template Function for all Functions that will control rcam like take photo
 // this will be achived by changing shared memory to control the loop in initServerRcam
-int exampleVariableChanger (cameraControl *toChange)
+
+/*
+int exampleVariableChanger (struct cameraControl *toChange)
 {
   //does not need to be &mutexPtr as is passed as a pointer
   // this is an atempt to not declare it globally
-  pthread_mutex_lock(&toChange->mutexPtr); /*check this would actually work*/
+  pthread_mutex_lock(&toChange->mutexPtr); //check this would actually work
   toChange->variable = value;
   pthread_mutex_unlock(&toChange->mutexPtr);
 }
+*/

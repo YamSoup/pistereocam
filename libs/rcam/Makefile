@@ -7,7 +7,9 @@ EGL_INC =
 OMX_INC =  -I /opt/vc/include/IL
 OMX_ILCLIENT_INC = -I/opt/vc/src/hello_pi/libs/ilclient
 
-INCLUDES = $(DMX_INC) $(EGL_INC) $(OMX_INC) $(OMX_ILCLIENT_INC)
+MY_INC = -I ../print_OMX/ -I ../socket_helper/
+
+INCLUDES = $(DMX_INC) $(EGL_INC) $(OMX_INC) $(OMX_ILCLIENT_INC) $(MY_INC)
 
 CFLAGS=-g -DRASPBERRY_PI -DOMX_SKIP64BIT $(INCLUDES)
 CPPFLAGS = -march=armv7-a -mtune=cortex-a7

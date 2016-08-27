@@ -5,9 +5,11 @@
 
 #include "bcm_host.h"
 #include "ilclient.h"
-#include <pthread.h>
-#include <stdbool.h>
+
 #include <stdio.h>
+#include <stdbool.h>
+
+#include <pthread.h>
 
 /////////////////////////////////////////////////////////////////
 // Data Stuctures
