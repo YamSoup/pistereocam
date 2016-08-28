@@ -156,7 +156,9 @@ int main(int argc, char *argv[])
     read(socket_fd, &handshake_r, sizeof(char)*4);
     printf("handshake = %s\n\n", handshake_r);
 
-    while(count < 100)
+    bool continueLoop = true;
+    
+    while(continueLoop)
     {
       count++;
       printf("count = %d\n", count);
@@ -171,6 +173,7 @@ int main(int argc, char *argv[])
 	case NO_COMMAND: break;
 	case START_PREVIEW: deliver_preview = true; break;
 	case STOP_PREVIEW: deliver_preview = false; break;
+	case END_REMOTE_CAM: continueLoop = false; break;
 	}
 
       //if preview is running deliver preview

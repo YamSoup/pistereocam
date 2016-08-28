@@ -21,7 +21,8 @@ enum rcam_command
     SET_PREVIEW_FRAMERATE = 11,
     START_PREVIEW = 20,
     STOP_PREVIEW = 21,
-    TAKE_PHOTO = 30
+    TAKE_PHOTO = 30,
+    END_REMOTE_CAM = 99
 };
 
 //needed as a thread can only be passed 1 argument
@@ -31,7 +32,7 @@ struct cameraControl
   pthread_mutex_t mutexPtr;
   bool rcamDeInit;
   //preview
-  bool previewRunning;
+  bool previewDisplayed;
   bool previewchanged;
   int previewWidth;
   int previewHeight;
@@ -55,6 +56,7 @@ struct cameraControl
 
 int testFunction(ILCLIENT_T *client);
 
-int InitServerRcam(void *VoidPtrArgs);
+void *initServerRcam(void *VoidPtrArgs);
+void deInitServerRcam(struct cameraControl *toChange);
 
 #endif // _RCAM_H

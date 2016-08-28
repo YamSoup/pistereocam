@@ -10,6 +10,8 @@
 #include "print_OMX.h"
 #include "socket_helper.h"
 
+#define PORT "8039"
+
 /*
 This function creates a renderer on the server and comunicates with rcam client program to
 display a preview until stopped
@@ -26,7 +28,7 @@ either that or possibly a semephore to control the state
 
 The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
-int initServerRcam(void *VoidPtrArgs)
+void *initServerRcam(void *VoidPtrArgs)
 {    
   struct cameraControl *currentArgs = VoidPtrArgs;
 
@@ -58,7 +60,7 @@ int initServerRcam(void *VoidPtrArgs)
   render_config.nSize = sizeof(render_config);
   render_config.nPortIndex = 90;
 
-  rcam_command rcamToSend = NO_COMMAND;
+  enum rcam_command rcam_command = NO_COMMAND;
 
   /////////////////////////////////////////////////////////////////
   // SOCKET STUFF
@@ -66,6 +68,7 @@ int initServerRcam(void *VoidPtrArgs)
   printf("start of socket stuff in rcam\n");
 
   int socket_fd = 0, client_socket_fd = 0;
+  
   socket_fd = getAndBindTCPServerSocket(PORT);
   
   printf("waiting for remotecam to connect\n");
@@ -74,8 +77,7 @@ int initServerRcam(void *VoidPtrArgs)
 
   printf("socket_fd = %d\n", socket_fd);
   printf("client_socket_fd = %d\n", client_socket_fd);
-
-
+  
   ///////////////////////////////////////////
   ////Initialise client video render
   ///////////////////////////////////////////
@@ -197,7 +199,6 @@ int initServerRcam(void *VoidPtrArgs)
   void * temp_buffer;
   temp_buffer = malloc(render_params.nBufferSize + 1 );
 
-  int count = 0;
   long int num_bytes = 0;
   enum rcam_command current_command = START_PREVIEW;
 
@@ -224,13 +225,9 @@ int initServerRcam(void *VoidPtrArgs)
       pthread_mutex_lock(&currentArgs->mutexPtr);
       rcamLoopEsc = currentArgs->rcamDeInit;
       pthread_mutex_unlock(&currentArgs->mutexPtr);  
-      if(rcamLoopEsc != false) break; //exits while loop
-     
-
+      
       printState(ilclient_get_handle(client_video_render));
-      count++;
-      printf("count = %d\n", count);
-
+      
       printf("get a buffer to process\n");
       printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
       num_bytes = read(client_socket_fd,
@@ -254,6 +251,13 @@ int initServerRcam(void *VoidPtrArgs)
       //empty buffer into render component
       OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
       printf("Emptied buffer\n");
+
+      if(rcamLoopEsc != false)
+	{
+	  current_command = END_REMOTE_CAM;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
+	  break; //exits while loop
+	}
 
       //send no command
       write(client_socket_fd, &current_command, sizeof(current_command));
