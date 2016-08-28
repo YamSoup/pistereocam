@@ -10,37 +10,6 @@
 #include "print_OMX.h"
 #include "socket_helper.h"
 
-
-/*
-what do I want from this rcam
-
-I want server functions to create the preview renderer for the remote camera INITIALIZE
-I want to to be able to start and stop the preview from the server
-
-next: I want to be able to control settings for the remote camera from the server
-next: I want to be able to take a photo and have it sent to the server
-
-I want to destroy the initlaization done by ending infinate loop
-
-maybe client side functions to simplify/
- */
-
-//test funstion to check i can raise ilclient objexts from a linked file
-int testFunction(ILCLIENT_T *client)
-{
-  COMPONENT_T *cameraTest;
-  int result;
-
-  result = ilclient_create_component(client,
-                            &cameraTest,
-                            "camera",
-                            ILCLIENT_DISABLE_ALL_PORTS
-			    | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
-  printState(ilclient_get_handle(cameraTest));
-
-  return result;
-}
-
 /*
 This function creates a renderer on the server and comunicates with rcam client program to
 display a preview until stopped
@@ -60,7 +29,10 @@ The display type selects if the preview runs full screen. or on the left or righ
 int initServerRcam(void *VoidPtrArgs)
 {    
   struct cameraControl *currentArgs = VoidPtrArgs;
+
+  pthread_mutex_lock(&currentArgs->mutexPtr);  
   ILCLIENT_T *client = currentArgs->client;
+  pthread_mutex_unlock(&currentArgs->mutexPtr);
 
   ///////////////////////////////////////////
   ////Variables
@@ -107,6 +79,8 @@ int initServerRcam(void *VoidPtrArgs)
   ///////////////////////////////////////////
   ////Initialise client video render
   ///////////////////////////////////////////
+  pthread_mutex_lock(&currentArgs->mutexPtr);
+
   ilclient_create_component(client,
 			    &client_video_render,
 			    "video_render",
@@ -137,6 +111,8 @@ int initServerRcam(void *VoidPtrArgs)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
 
+  pthread_mutex_unlock(&currentArgs->mutexPtr);
+  
   //check the port params
   memset(&render_params, 0, sizeof(render_params));
   render_params.nVersion.nVersion = OMX_VERSION;
@@ -150,6 +126,8 @@ int initServerRcam(void *VoidPtrArgs)
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
 
   //set the position on the screen
+  pthread_mutex_lock(&currentArgs->mutexPtr);  
+
   render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
 					   |OMX_DISPLAY_SET_FULLSCREEN
 					   |OMX_DISPLAY_SET_NOASPECT
@@ -167,13 +145,16 @@ int initServerRcam(void *VoidPtrArgs)
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
 
+  pthread_mutex_unlock(&currentArgs->mutexPtr);  
 
   //ask ilclient to allocate buffers for client_video_render
+  pthread_mutex_lock(&currentArgs->mutexPtr);  
+
   printf("enable client_video_render_input port\n");
   ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
   ilclient_enable_port(client_video_render, 90);
 
-
+  pthread_mutex_unlock(&currentArgs->mutexPtr);  
   /*
   DOES NOT WORK LEAVING AS A REMINDER
 
@@ -190,6 +171,7 @@ int initServerRcam(void *VoidPtrArgs)
   */
 
   //change preview render to executing
+  pthread_mutex_lock(&currentArgs->mutexPtr);
   OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
     {
@@ -199,6 +181,8 @@ int initServerRcam(void *VoidPtrArgs)
   printf("client_video_render state is ");
   printState(ilclient_get_handle(client_video_render));
   printf("***\n");
+
+  pthread_mutex_unlock(&currentArgs->mutexPtr);  
 
   ////////////////////////////////////////////////////////////
   // SEND AND RECV
@@ -231,9 +215,18 @@ int initServerRcam(void *VoidPtrArgs)
   //// Main Thread Loop
   ////////////////////////////////////////////////////////////
 
+  bool rcamLoopEsc = false;
+
   //modify to inifinate loop when control functions are writen
-  while(currentArgs->rcamDeInit == 0)
+  while(1)
     {
+      //escape condition needs mutex so is not in while condition
+      pthread_mutex_lock(&currentArgs->mutexPtr);
+      rcamLoopEsc = currentArgs->rcamDeInit;
+      pthread_mutex_unlock(&currentArgs->mutexPtr);  
+      if(rcamLoopEsc != false) break; //exits while loop
+     
+
       printState(ilclient_get_handle(client_video_render));
       count++;
       printf("count = %d\n", count);
@@ -282,9 +275,12 @@ int initServerRcam(void *VoidPtrArgs)
 
 }
 
-
-
-
+void deInitServerRcam(struct cameraControl *toChange)
+{
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->rcamDeInit = 1;
+  pthread_mutex_unlock(&toChange->mutexPtr);
+}
 
 // does not need to have void pointer attribute as will run in main thread
 // This is a template Function for all Functions that will control rcam like take photo
