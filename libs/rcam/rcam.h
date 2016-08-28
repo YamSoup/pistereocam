@@ -29,6 +29,7 @@ struct cameraControl
 {
   ILCLIENT_T *client;
   pthread_mutex_t mutexPtr;
+  bool rcamDeInit;
   //preview
   bool previewRunning;
   bool previewchanged;

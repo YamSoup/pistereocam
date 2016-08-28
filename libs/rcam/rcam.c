@@ -12,7 +12,7 @@
 
 
 /*
-what do I want from this
+what do I want from this rcam
 
 I want server functions to create the preview renderer for the remote camera INITIALIZE
 I want to to be able to start and stop the preview from the server
@@ -20,7 +20,7 @@ I want to to be able to start and stop the preview from the server
 next: I want to be able to control settings for the remote camera from the server
 next: I want to be able to take a photo and have it sent to the server
 
-I want to destroy the initlaization
+I want to destroy the initlaization done by ending infinate loop
 
 maybe client side functions to simplify/
  */
@@ -62,8 +62,6 @@ int initServerRcam(void *VoidPtrArgs)
   struct cameraControl *currentArgs = VoidPtrArgs;
   ILCLIENT_T *client = currentArgs->client;
 
-  printf("cameraControl\npreviewWidth: %d\n", currentArgs->previewWidth);
-
   ///////////////////////////////////////////
   ////Variables
   ///////////////////////////////////////////
@@ -88,8 +86,26 @@ int initServerRcam(void *VoidPtrArgs)
   render_config.nSize = sizeof(render_config);
   render_config.nPortIndex = 90;
 
+  rcam_command rcamToSend = NO_COMMAND;
+
+  /////////////////////////////////////////////////////////////////
+  // SOCKET STUFF
+  /////////////////////////////////////////////////////////////////
+  printf("start of socket stuff in rcam\n");
+
+  int socket_fd = 0, client_socket_fd = 0;
+  socket_fd = getAndBindTCPServerSocket(PORT);
+  
+  printf("waiting for remotecam to connect\n");
+
+  client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
+
+  printf("socket_fd = %d\n", socket_fd);
+  printf("client_socket_fd = %d\n", client_socket_fd);
+
+
   ///////////////////////////////////////////
-  ////Initialise client video render////
+  ////Initialise client video render
   ///////////////////////////////////////////
   ilclient_create_component(client,
 			    &client_video_render,
@@ -104,7 +120,7 @@ int initServerRcam(void *VoidPtrArgs)
       exit(EXIT_FAILURE);
     }
 
-  //set the port params to the same as the remote camera
+  //set the port params to the same as remoteCam.c
 
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -184,9 +200,91 @@ int initServerRcam(void *VoidPtrArgs)
   printState(ilclient_get_handle(client_video_render));
   printf("***\n");
 
+  ////////////////////////////////////////////////////////////
+  // SEND AND RECV
+  ////////////////////////////////////////////////////////////
 
+  //handshake
+  printf("waiting to recive handshake ... \n");
+  read(client_socket_fd, char_buffer, 11);
+  printf("handshake result = %s", char_buffer);
+  write(client_socket_fd, "got\0", sizeof(char)*4);
+
+  void * temp_buffer;
+  temp_buffer = malloc(render_params.nBufferSize + 1 );
+
+  int count = 0;
+  long int num_bytes = 0;
+  enum rcam_command current_command = START_PREVIEW;
+
+  printf("current_command = %d\n", current_command);
+
+  printf("sending command ...");
+  write(client_socket_fd, &current_command, sizeof(current_command));
+  printf("sent command\n");
+
+  current_command = NO_COMMAND;
+
+  printf("*** nBufferSize = %d\n", render_params.nBufferSize);
+
+  ////////////////////////////////////////////////////////////
+  //// Main Thread Loop
+  ////////////////////////////////////////////////////////////
+
+  //modify to inifinate loop when control functions are writen
+  while(currentArgs->rcamDeInit == 0)
+    {
+      printState(ilclient_get_handle(client_video_render));
+      count++;
+      printf("count = %d\n", count);
+
+      printf("get a buffer to process\n");
+      printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
+      num_bytes = read(client_socket_fd,
+		       temp_buffer,
+		       render_params.nBufferSize);
+      while (num_bytes < render_params.nBufferSize)
+	{
+	  num_bytes += read(client_socket_fd,
+			    temp_buffer + num_bytes,
+			    render_params.nBufferSize - num_bytes);
+	}
+      printf("buffer recived, recived %ld bytes\n", num_bytes);
+
+      //change nAllocLen in bufferheader
+      client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
+      memcpy(client_video_render_in->pBuffer, temp_buffer, render_params.nBufferSize);
+      printf("copied buffer form temp into client_video_render_in\n");
+      //fix alloc len
+      client_video_render_in->nFilledLen = render_params.nBufferSize;
+
+      //empty buffer into render component
+      OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
+      printf("Emptied buffer\n");
+
+      //send no command
+      write(client_socket_fd, &current_command, sizeof(current_command));
+    }
+
+
+  putchar('\n');
+
+  ////////////////////////////////////////////////////////////
+  //// end of thread
+  ////////////////////////////////////////////////////////////
+   
+  //free buffer memory
+  free(temp_buffer);
+
+  //!free ilobjects and make sure all allocated memory is free!
+
+  //!free sockets try to ensure no zombies
 
 }
+
+
+
+
 
 // does not need to have void pointer attribute as will run in main thread
 // This is a template Function for all Functions that will control rcam like take photo
