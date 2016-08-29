@@ -267,7 +267,7 @@ void *initServerRcam(void *VoidPtrArgs)
   putchar('\n');
 
   ////////////////////////////////////////////////////////////
-  //// end of thread
+  //// end of thread Cleanup
   ////////////////////////////////////////////////////////////
    
   //free buffer memory
@@ -276,7 +276,7 @@ void *initServerRcam(void *VoidPtrArgs)
   //!free ilobjects and make sure all allocated memory is free!
 
   //!free sockets try to ensure no zombies
-
+  printf("exiting rcam thread");
 }
 
 void deInitServerRcam(struct cameraControl *toChange)

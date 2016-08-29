@@ -41,7 +41,9 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 #include "socket_helper.h"
 #include "rcam.h"
 
+//loopback ip for testing
 //#define IP_ADD "127.0.0.1"
+
 #define IP_ADD "192.168.0.21"
 #define SERV_PORT "8039"
 
@@ -132,7 +134,7 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
-    //SOCKET STUFF
+    //Loop until connected to server program
     while(1)
       {
 	socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
@@ -215,6 +217,7 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
+    printf("exiting remote_cam.c");
     return 0;
 }
 
