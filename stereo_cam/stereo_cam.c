@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <unistd.h>
+#include <unistd.h> //used for sleep()
 
 #include <errno.h>
 #include <string.h>
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
   
   
   //sleep for 2 secs
-  sleep(100);
+  sleep(30);
   deInitServerRcam(&cameraControl);
 
   /////////////////////////////////////////////////////////////////

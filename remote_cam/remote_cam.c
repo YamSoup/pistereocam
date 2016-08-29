@@ -23,7 +23,7 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <unistd.h>
+#include <unistd.h> //used for sleep()
 
 #include <errno.h>
 #include <string.h>
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //set the capture resolution
-    //setCaptureRes(camera, 2592, 1944);
+    setCaptureRes(camera, 2592, 1944);
     //set default preview resolution
     setPreviewRes(camera, 320, 240);
 
@@ -133,15 +133,20 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //SOCKET STUFF
-    socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
-    if (socket_fd < 0)
+    while(1)
       {
-	printf("socket failure\n");
-	exit(EXIT_FAILURE);
+	socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
+	if (socket_fd < 0)
+	  {
+	    printf("socket failure\n");
+	    sleep(1);
+	  }
+	else
+	  {
+	    printf("socket success!, socket_fd = %d\n", socket_fd);
+	    break;
+	  }
       }
-    else
-      printf("socket success!, socket_fd = %d\n", socket_fd);
-
 
     ////////////////////////////////////////////////////////////
     // SEND AND RECV
