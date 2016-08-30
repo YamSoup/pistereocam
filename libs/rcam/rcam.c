@@ -252,10 +252,12 @@ void *initServerRcam(void *VoidPtrArgs)
       OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
       printf("Emptied buffer\n");
 
+      
       if(rcamLoopEsc != false)
 	{
 	  current_command = END_REMOTE_CAM;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
+  	  printf("END_REMOTE_CAM sent\n");
 	  break; //exits while loop
 	}
 
@@ -263,16 +265,13 @@ void *initServerRcam(void *VoidPtrArgs)
       write(client_socket_fd, &current_command, sizeof(current_command));
     }
 
-
-  putchar('\n');
-
   ////////////////////////////////////////////////////////////
   //// end of thread Cleanup
   ////////////////////////////////////////////////////////////
    
   //free buffer memory
   free(temp_buffer);
-
+  printf("temp_buffer memory freed");
   //!free ilobjects and make sure all allocated memory is free!
 
   //!free sockets try to ensure no zombies

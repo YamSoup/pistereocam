@@ -295,8 +295,9 @@ int main(int argc, char *argv[])
   
   
   //sleep for 2 secs
-  sleep(30);
+  sleep(10);
   deInitServerRcam(&cameraControl);
+  pthread_join(threadid, NULL);
 
   /////////////////////////////////////////////////////////////////
   //CLEANUP
@@ -311,6 +312,7 @@ int main(int argc, char *argv[])
   //destroy client
   ilclient_destroy(client);
 
+  pthread_exit(NULL);
   return 0;
 }
 

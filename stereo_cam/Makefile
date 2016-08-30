@@ -7,7 +7,7 @@ MY_INC = -I ../libs/print_OMX/ -I ../libs/socket_helper/ -I ../libs/rcam/
 
 INCLUDES = $(DMX_INC) $(EGL_INC) $(OMX_INC) $(OMX_ILCLIENT_INC) $(MY_INC)
 
-CFLAGS=-g -DRASPBERRY_PI -DOMX_SKIP64BIT $(INCLUDES)
+CFLAGS=-g -DRASPBERRY_PI -DOMX_SKIP64BIT -pthread $(INCLUDES)
 CPPFLAGS = -march=armv7-a -mtune=cortex-a7
 
 DMX_LIBS =  -L/opt/vc/lib/ -lbcm_host -lvcos -lvchiq_arm -lpthread
