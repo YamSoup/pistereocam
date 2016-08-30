@@ -253,7 +253,7 @@ void *initServerRcam(void *VoidPtrArgs)
       printf("Emptied buffer\n");
 
       
-      if(rcamLoopEsc != false)
+      if(rcamLoopEsc == true)
 	{
 	  current_command = END_REMOTE_CAM;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
@@ -276,6 +276,7 @@ void *initServerRcam(void *VoidPtrArgs)
 
   //!free sockets try to ensure no zombies
   printf("exiting rcam thread");
+  pthread_exit(NULL);
 }
 
 void deInitServerRcam(struct cameraControl *toChange)

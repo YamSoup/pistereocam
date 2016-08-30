@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
   //destroy client
   ilclient_destroy(client);
 
-  pthread_exit(NULL);
+  //pthread_exit(NULL);
   return 0;
 }
 
