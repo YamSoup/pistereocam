@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   render_config.fullscreen = OMX_FALSE;
   render_config.noaspect = OMX_FALSE;
  
-  render_config.dest_rect.width = screen_width/2;
+  render_config.dest_rect.width = screen_width;
   render_config.dest_rect.height = screen_height;
 
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
