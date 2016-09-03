@@ -16,8 +16,11 @@
 This function creates a renderer on the server and comunicates with rcam client program to
 display a preview until stopped
 Somehow needs to take a photo as well?
-not really sure how to control once started?
-unsure if this is possible - possibly by creating a global context to control the loop??
+
+Idea for camera capture on rcam 
+Create a buffer large enough to hold the biggest image possible and an int for the size of the final buffer
+Transfer the whole image when it is finished 
+This will get over the issue of having to wait for the flag to tell when the process has stopped !
 
 as a function that needs to be a thread this can only have 1 argument
 and so will need a pointer to a struct containing all the needed parameters.

@@ -12,15 +12,10 @@
     for relevent data stuctures see
     http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___index_8h.html 
 
+    POSSIBLY USE WAIT() to avoid a busy wait.
   */
 
 
-/*
-Idea for camera capture on rcam 
-Create a buffer large enough to hold the biggest image possible and an int for the size of the final buffer
-Transfer the whole image when it is finished 
-This will get over the issue of having to wait for the flag to tell when the process has stopped !
-*/
 
 
 #include <stdio.h>
@@ -79,7 +74,8 @@ int main(int argc, char *argv[])
   memset(&image_format, 0, sizeof(image_format));
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
-  
+
+  // need to notify camera component of image capture
   OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
   memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
   still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
@@ -210,22 +206,6 @@ int main(int argc, char *argv[])
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));  
   
-  /*
-  DOES NOT WORK LEAVING AS A REMINDER
-
-  memset(&render_config, 0, sizeof(render_config));
-  render_config.nVersion.nVersion = OMX_VERSION;
-  render_config.nSize = sizeof(render_config);
-  render_config.nPortIndex = 90; 
-  render_config.set = OMX_DISPLAY_SET_DUMMY;
-  
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Config. Error = %s\n", err2str(OMXstatus));  
-  print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
-  */
-
-
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -307,8 +287,13 @@ int main(int argc, char *argv[])
     }
   printState(ilclient_get_handle(image_encode));
 
+  //////////////////////////////////////////////////////
+  // Code that takes picture
+  //////////////////////////////////////////////////////
+
+  printf("capture started\n");
   
-  //tell API port is taking picture
+  //tell API port is taking picture - appears to be nessesery!
   still_capture_in_progress.bEnabled = 1;
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
 			       OMX_IndexConfigPortCapturing,
@@ -330,8 +315,7 @@ int main(int argc, char *argv[])
 	break;
       OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
     }
-    
-  
+
   //tell API port is finished capture
   still_capture_in_progress.bEnabled = 0;
   still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
@@ -347,6 +331,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
   
+
   printf("captureSaved\n");
   //sleep for 2 secs
   sleep(2);
@@ -374,5 +359,5 @@ int main(int argc, char *argv[])
 
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data)
 {
-  fprintf(stderr, "OMX error %s\n", err2str(data));
+  fprintf(stderr, "OMX error!!! %s\n", err2str(data));
 }
