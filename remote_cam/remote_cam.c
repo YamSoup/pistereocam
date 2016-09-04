@@ -242,7 +242,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
   //change needed params
-  port_params.format.image.nFrameWidth = width; //maxsettings
+  port_params.format.image.nFrameWidth = width;
   port_params.format.image.nFrameHeight = height;
   port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
   port_params.format.image.nSliceHeight = 0;  //notneeded?

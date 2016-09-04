@@ -33,6 +33,129 @@
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data); 
 
 /////////////////////////////////////////////////////////////////
+//
+// FUNCTIONS TO PUT IN RCAM!
+//
+/////////////////////////////////////////////////////////////////
+
+
+void setCaptureRes(COMPONENT_T *camera, int width, int height)
+{
+  //needs to check width and height to see if compatible with rpi
+
+  OMX_PARAM_PORTDEFINITIONTYPE port_params;
+  OMX_ERRORTYPE OMXstatus;
+
+  memset(&port_params, 0, sizeof(port_params));
+  port_params.nVersion.nVersion = OMX_VERSION;
+  port_params.nSize = sizeof(port_params);
+  port_params.nPortIndex = 72;
+
+  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
+  //change needed params
+  port_params.format.image.nFrameWidth = width;
+  port_params.format.image.nFrameHeight = height;
+  port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
+  port_params.format.image.nSliceHeight = 0;  //notneeded?
+  //set changes
+  OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Setting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
+
+  //print current config 
+  memset(&port_params, 0, sizeof(port_params));
+  port_params.nVersion.nVersion = OMX_VERSION;
+  port_params.nSize = sizeof(port_params);
+  port_params.nPortIndex = 72;
+
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Parameter (2) In setCaptureRes. Error = %s\n", err2str(OMXstatus));
+  print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
+
+}
+
+//set preview res
+void setPreviewRes(COMPONENT_T *camera, int width, int height)
+{
+    //needs to check width and height to see if compatible with rpi
+
+    OMX_PARAM_PORTDEFINITIONTYPE port_params;
+    OMX_ERRORTYPE OMXstatus;
+
+    memset(&port_params, 0, sizeof(port_params));
+    port_params.nVersion.nVersion = OMX_VERSION;
+    port_params.nSize = sizeof(port_params);
+    port_params.nPortIndex = 70;
+    //prepopulate structure
+    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+    if (OMXstatus != OMX_ErrorNone)
+        printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+    //change needed params
+    port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+    port_params.format.video.nFrameWidth = width;
+    port_params.format.video.nFrameHeight = height;
+    port_params.format.video.nStride = width;
+    port_params.format.video.nSliceHeight = height;
+    port_params.format.video.xFramerate = 24 << 16;
+    //set changes
+    OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+    if (OMXstatus != OMX_ErrorNone)
+        printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+    
+    //print current config
+    memset(&port_params, 0, sizeof(port_params));
+    port_params.nVersion.nVersion = OMX_VERSION;
+    port_params.nSize = sizeof(port_params);
+    port_params.nPortIndex = 70;
+
+    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+    if (OMXstatus != OMX_ErrorNone)
+        printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+    print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
+}
+
+
+
+#define FULLSCREEN 1
+
+/*
+  this functions sets where the render is displayed on the screen
+  presetScreenConfig will be a ENUM in rcam.h 
+  presets will include FULLSCREEN, SIDEBYSIDELEFT, SIDEBYSIDERIGHT
+*/
+void setRenderConfig(COMPONENT_T *camera, int presetScreenConfig, int screenWidth, int screenHeight)
+{
+
+  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
+  memset(&render_config, 0, sizeof(render_config));
+  render_config.nVersion.nVersion = OMX_VERSION;
+  render_config.nSize = sizeof(render_config);
+  render_config.nPortIndex = 90;
+  
+  //curently only does fullscreen modify the stucture below with switch/if statements for the others
+  render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
+					   |OMX_DISPLAY_SET_FULLSCREEN
+					   |OMX_DISPLAY_SET_NOASPECT
+					   |OMX_DISPLAY_SET_MODE);
+  render_config.fullscreen = OMX_FALSE;
+  render_config.noaspect = OMX_FALSE;
+ 
+  render_config.dest_rect.width = screenWidth;
+  render_config.dest_rect.height = screenHeight;
+
+  render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
+  
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));  
+  
+
+}
+
+/////////////////////////////////////////////////////////////////
 // MAIN
 /////////////////////////////////////////////////////////////////
 
@@ -55,33 +178,6 @@ int main(int argc, char *argv[])
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
   memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
-
-  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
-  memset(&render_config, 0, sizeof(render_config));
-  render_config.nVersion.nVersion = OMX_VERSION;
-  render_config.nSize = sizeof(render_config);
-  render_config.nPortIndex = 90; 
-
-  //res
-  OMX_PARAM_PORTDEFINITIONTYPE port_params;
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 72;
-
-  //camera still capture stuctures
-  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;
-  memset(&image_format, 0, sizeof(image_format));
-  image_format.nVersion.nVersion = OMX_VERSION;
-  image_format.nSize = sizeof(image_format);
-
-  // need to notify camera component of image capture
-  OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
-  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
-  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
-  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
-  still_capture_in_progress.nPortIndex = 72;
-  still_capture_in_progress.bEnabled = 0;
   
     
   /////////////////////////////////////////////////////////////////
@@ -119,7 +215,9 @@ int main(int argc, char *argv[])
   
   
   /////////////////////////////////////////////////////////////////
+  //
   // Initalize Components
+  //
   /////////////////////////////////////////////////////////////////
   
   ///////////////////////////////////////////
@@ -137,46 +235,17 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
+
   //change the capture resolution
-  //prepopulate structure
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
-  //change needed params
-  port_params.format.image.nFrameWidth = 2592; //maxsettings
-  port_params.format.image.nFrameHeight = 1944;
-  port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
-  port_params.format.image.nSliceHeight = 0;  //notneeded?
-  //set changes
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Paramter. Error = %s\n", err2str(OMXstatus));
+  setCaptureRes(camera, 2592, 1944);
 
   //change the preview resolution
-  //reuse port params
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 70;
-  //prepopulate structure
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter. Error = %s\n", err2str(OMXstatus));
-  //change needed params
-  port_params.format.video.nFrameWidth = 320;
-  port_params.format.video.nFrameHeight = 240;
-  port_params.format.video.nStride = 0;
-  port_params.format.video.nSliceHeight = 0;
-  port_params.format.video.nBitrate = 0;
-  port_params.format.video.xFramerate = 0;
-  //set changes
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
+  setPreviewRes(camera, 320, 240);
   
   ///////////////////////////////////////////
   ////Initialise video render////
   ///////////////////////////////////////////
+
   ilclient_create_component(client,
 			    &video_render,
 			    "video_render",
@@ -189,23 +258,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "unable to move render component to Idle (1)\n");
       exit(EXIT_FAILURE);
     }
-  
-  render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
-					   |OMX_DISPLAY_SET_FULLSCREEN
-					   |OMX_DISPLAY_SET_NOASPECT
-					   |OMX_DISPLAY_SET_MODE);
-  render_config.fullscreen = OMX_FALSE;
-  render_config.noaspect = OMX_FALSE;
- 
-  render_config.dest_rect.width = screen_width;
-  render_config.dest_rect.height = screen_height;
 
-  render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
-  
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));  
-  
+  setRenderConfig(camera, FULLSCREEN, screen_width, screen_height);  
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -223,6 +277,13 @@ int main(int argc, char *argv[])
       fprintf(stderr, "unable to move image encode component to Idle (1)\n");
       exit(EXIT_FAILURE);
     }
+
+
+  //image format stucture */
+  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format; */
+  memset(&image_format, 0, sizeof(image_format)); */
+  image_format.nVersion.nVersion = OMX_VERSION; */
+  image_format.nSize = sizeof(image_format); */
 
   //populate image_format with information from the camera port
   image_format.nPortIndex = 72;
@@ -292,7 +353,15 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////
 
   printf("capture started\n");
-  
+
+  // needed to notify camera component of image capture */
+  OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress; */
+  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress)); */
+  still_capture_in_progress.nVersion.nVersion = OMX_VERSION; */
+  still_capture_in_progress.nSize = sizeof(still_capture_in_progress); */
+  still_capture_in_progress.nPortIndex = 72; */
+  still_capture_in_progress.bEnabled = 0; */
+
   //tell API port is taking picture - appears to be nessesery!
   still_capture_in_progress.bEnabled = 1;
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
