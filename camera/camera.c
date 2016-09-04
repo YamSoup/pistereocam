@@ -15,9 +15,6 @@
     POSSIBLY USE WAIT() to avoid a busy wait.
   */
 
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,9 +123,10 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
   presetScreenConfig will be a ENUM in rcam.h 
   presets will include FULLSCREEN, SIDEBYSIDELEFT, SIDEBYSIDERIGHT
 */
-void setRenderConfig(COMPONENT_T *camera, int presetScreenConfig, int screenWidth, int screenHeight)
+void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int screenWidth, int screenHeight)
 {
-
+  OMX_ERRORTYPE OMXstatus;
+  
   OMX_CONFIG_DISPLAYREGIONTYPE render_config;
   memset(&render_config, 0, sizeof(render_config));
   render_config.nVersion.nVersion = OMX_VERSION;
@@ -151,9 +149,76 @@ void setRenderConfig(COMPONENT_T *camera, int presetScreenConfig, int screenWidt
   OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));  
+}
+
+//currently needs the image encode to be executing and a tunnel inplace
+//this maybe should be ensured through the init 
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
+{
+  OMX_ERRORTYPE OMXstatus;
+  OMX_BUFFERHEADERTYPE *decode_out;
   
+  printf("capture started\n");
+
+  // needed to notify camera component of image capture
+  OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
+  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
+  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
+  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
+  still_capture_in_progress.nPortIndex = 72;
+  still_capture_in_progress.bEnabled = OMX_FALSE;
+
+  //tell API port is taking picture - appears to be nessesery!
+  still_capture_in_progress.bEnabled = OMX_TRUE;
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
+			       OMX_IndexConfigPortCapturing,
+			       &still_capture_in_progress);  
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to set Config (1)\n");
+      exit(EXIT_FAILURE);
+    }  
+
+  while(1)
+    {
+      printf("loop pre blocking call\n");
+      decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
+      printf("decode_out bytes = %d\n", decode_out->nFilledLen);
+      //printf("decode_out bufferflags = %d\n\n", decode_out->nFlags);
+      
+      if(decode_out->nFilledLen != 0) 
+	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+      if(decode_out->nFlags == 1)
+	{
+	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
+	  break;
+	}
+      printf("pre fill this buffer\n");
+      OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
+    }
+
+  
+  
+  //tell API port is finished capture
+  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
+  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
+  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
+  still_capture_in_progress.nPortIndex = 72;
+  still_capture_in_progress.bEnabled = OMX_FALSE;
+  
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
+			       OMX_IndexConfigPortCapturing,
+			       &still_capture_in_progress);  
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to set Config (1)\n");
+      exit(EXIT_FAILURE);
+    }  
+  
+  printf("captureSaved\n");
 
 }
+
 
 /////////////////////////////////////////////////////////////////
 // MAIN
@@ -170,10 +235,10 @@ int main(int argc, char *argv[])
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   OMX_ERRORTYPE OMXstatus;
   uint32_t screen_width = 0, screen_height = 0;
-  OMX_BUFFERHEADERTYPE *decode_out;
 
-  FILE *file_out1;
+  FILE *file_out1, *file_out2;
   file_out1 = fopen("pic1", "wb");
+  file_out2 = fopen("pic2", "wb");
   
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
@@ -280,10 +345,10 @@ int main(int argc, char *argv[])
 
 
   //image format stucture */
-  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format; */
-  memset(&image_format, 0, sizeof(image_format)); */
-  image_format.nVersion.nVersion = OMX_VERSION; */
-  image_format.nSize = sizeof(image_format); */
+  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;
+  memset(&image_format, 0, sizeof(image_format));
+  image_format.nVersion.nVersion = OMX_VERSION;
+  image_format.nSize = sizeof(image_format);
 
   //populate image_format with information from the camera port
   image_format.nPortIndex = 72;
@@ -351,67 +416,22 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////
   // Code that takes picture
   //////////////////////////////////////////////////////
-
-  printf("capture started\n");
-
-  // needed to notify camera component of image capture */
-  OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress; */
-  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress)); */
-  still_capture_in_progress.nVersion.nVersion = OMX_VERSION; */
-  still_capture_in_progress.nSize = sizeof(still_capture_in_progress); */
-  still_capture_in_progress.nPortIndex = 72; */
-  still_capture_in_progress.bEnabled = 0; */
-
-  //tell API port is taking picture - appears to be nessesery!
-  still_capture_in_progress.bEnabled = 1;
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
-			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to set Config (1)\n");
-      exit(EXIT_FAILURE);
-    }  
-
-  while(1)
-    {
-      decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
-      //printf("decode_out bytes = %d\n", decode_out->nFilledLen);
-      //printf("decode_out bufferflags = %d\n\n", decode_out->nFlags);
-      if(decode_out->nFilledLen != 0) 
-	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out1);
-      if(decode_out->nFlags == 1)
-	break;
-      OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
-    }
-
-  //tell API port is finished capture
-  still_capture_in_progress.bEnabled = 0;
-  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
-  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
-  still_capture_in_progress.nPortIndex = 72;
-  
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
-			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to set Config (1)\n");
-      exit(EXIT_FAILURE);
-    }
-  
-
-  printf("captureSaved\n");
+  savePhoto(camera, image_encode, file_out1);
   //sleep for 2 secs
-  sleep(2);
-  
+  sleep(10);
 
+  printState(ilclient_get_handle(image_encode));
+  
+  savePhoto(camera, image_encode, file_out2);
+
+  sleep(10);
   /////////////////////////////////////////////////////////////////
   //CLEANUP
   /////////////////////////////////////////////////////////////////
 
   //close files
   fclose(file_out1);
+  fclose(file_out2);
   
   //Disable components
   
