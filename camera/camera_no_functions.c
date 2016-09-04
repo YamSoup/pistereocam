@@ -317,7 +317,10 @@ int main(int argc, char *argv[])
       if(decode_out->nFilledLen != 0) 
 	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out1);
       if(decode_out->nFlags == 1)
-	break;
+	{
+	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
+	  break;
+	}
       OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
     }
     
