@@ -154,7 +154,6 @@ void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int scre
 }
 
 #define JPEG_FORMAT 1
-#define TIFF_FORMAT 2
 #define BMP_FORMAT 3
 /*
 Change formatType to enum as above 
@@ -166,6 +165,7 @@ TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 
 // horribly broken DONT USE THE SAME STRUCTURE TO GET AND SET!!!!
 // WEIRDLY ONLY ACCEPTS JPEG?
+// I BELIVE THIS TO BE CAUSED BY THE eColorFormat but I think it needs to match on camera and image_encode
 
 void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
 {
@@ -183,9 +183,10 @@ void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int for
   OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
-
+  
   image_format.nPortIndex = 341;
-  image_format.eCompressionFormat = OMX_IMAGE_CodingUnused;
+  // image_format.eColorFormat = OMX_COLOR_Format24bitRGB888;
+  image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
 
