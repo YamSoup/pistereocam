@@ -70,7 +70,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter (2) In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-  print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
+  
 
 }
 
@@ -111,7 +111,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
     OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
     if (OMXstatus != OMX_ErrorNone)
         printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
+    
 }
 
 
@@ -163,31 +163,16 @@ CURENTLY THIS IS NOT WORKING ON EXECUTING COMPONENTS
 AS PARAM CHANGES CAN ONLY BE DONE BEFORE A COMPONENT IS EXECUTING
 TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 */
-// horribly broken !!!!
-//void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
+
+// horribly broken DONT USE THE SAME STRUCTURE TO GET AND SET!!!!
+// WEIRDLY ONLY ACCEPTS JPEG?
+
+void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
 {
   OMX_ERRORTYPE OMXstatus;
-
-  OMXstatus = ilclient_change_component_state(camera, OMX_StateIdle);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to move camera component to Executing (1)\n");
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(camera));
-
-  
-  OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to move camera component to Executing (1)\n");
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(camera));
-
   
   //image format stucture */
-  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;
+  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;  
   memset(&image_format, 0, sizeof(image_format));
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
@@ -199,55 +184,15 @@ TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
 
-  //change some settings and set parameters
-  if (formatType == JPEG_FORMAT)
-    image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
-  if (formatType == TIFF_FORMAT)
-    image_format.eCompressionFormat = OMX_IMAGE_CodingTIFF;
-  if (formatType == BMP_FORMAT)
-    image_format.eCompressionFormat = OMX_IMAGE_CodingBMP;
-
-  image_format.eCompressionFormat = OMX_IMAGE_CodingBMP;
   image_format.nPortIndex = 341;
+  image_format.eCompressionFormat = OMX_IMAGE_CodingUnused;
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
-  
+
+  //print_OMX_IMAGE_PORTDEFINITIONTYPE(image_format);
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error setting Paramter. Error = %s\n", err2str(OMXstatus));
-
-
-  OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to move camera component to Executing (1)\n");
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(camera));
-  
-  OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to move camera component to Executing (1)\n");
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(camera));
-
-    
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("!! Error setting Paramter. Error = %s\n", err2str(OMXstatus));
-
-  if (image_format.eCompressionFormat == OMX_IMAGE_CodingJPEG)
-    printf("*** JPEG\n");
-  else if (image_format.eCompressionFormat == OMX_IMAGE_CodingTIFF)
-    printf("*** TIFF\n");
-  else if (image_format.eCompressionFormat == OMX_IMAGE_CodingBMP)
-    printf("*** BMP\n");
-  else if (image_format.eCompressionFormat == OMX_IMAGE_CodingGIF)
-    printf("*** GIF\n");
-  else
-    printf("*** DERP DERP %d\n", image_format.eCompressionFormat);
 }
 
 //currently needs the image encode to be executing and a tunnel inplace
@@ -281,8 +226,8 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
   while(1)
     {
       decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
-      //printf("decode_out bytes = %d\n", decode_out->nFilledLen);
-      //printf("decode_out bufferflags = %d\n\n", decode_out->nFlags);
+      printf("decode_out bytes = %d\n", decode_out->nFilledLen);
+      printf("decode_out bufferflags = %d\n\n", decode_out->nFlags);
       
       if(decode_out->nFilledLen != 0) 
 	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
@@ -495,7 +440,6 @@ int main(int argc, char *argv[])
   sleep(2);
 
   printState(ilclient_get_handle(image_encode));
-  setParamImageFormat(image_encode, camera, BMP_FORMAT);
   
   savePhoto(camera, image_encode, file_out2);
 
