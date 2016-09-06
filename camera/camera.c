@@ -132,10 +132,6 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
 */
 void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int screenWidth, int screenHeight)
 {
-
-  //currently broken but no idea why
-
-  
   printf("in setRenderConfig\n");
   OMX_ERRORTYPE OMXstatus;
   
@@ -374,7 +370,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  setRenderConfig(camera, FULLSCREEN, screen_width, screen_height);  
+  setRenderConfig(video_render, FULLSCREEN, screen_width, screen_height);  
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
