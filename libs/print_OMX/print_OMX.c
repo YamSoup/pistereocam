@@ -429,3 +429,19 @@ void print_OMX_PARAM_PORTDEFINITIONTYPE(OMX_PARAM_PORTDEFINITIONTYPE params)
     printf("nBufferAlignment = %d\n", (int)params.nBufferAlignment);
     printf("-----------------------\n");
 }
+
+void print_OMX_IMAGE_PARAM_PORTFORMATTYPE(OMX_IMAGE_PARAM_PORTFORMATTYPE image_params)
+{
+  printf("nSize = %d\n", (int)image_params.nSize);
+  printf("nVersion.nVersion.nVersionMajor = %d\n", (int)image_params.nVersion.s.nVersionMajor);
+  printf("                 .nVersionMinor = %d\n", (int)image_params.nVersion.s.nVersionMinor);
+  printf("                 .nReviseion = %d\n",    (int)image_params.nVersion.s.nRevision);
+  //printf("                 .nStep = &d\n",         (int)image_params.nVersion.s.nStep);
+  printf("nPortIndex = %d\n", image_params.nPortIndex);
+  printf("nIndex = %d\n", image_params.nIndex);
+
+  printf("   .eCompressionFormat = ");
+  print_OMX_IMAGE_CODINGTYPE(image_params.eCompressionFormat);
+  printf("   .eColorFormat = ");
+  print_OMX_COLOR_FORMATTYPE(image_params.eColorFormat);
+}

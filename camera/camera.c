@@ -39,7 +39,8 @@ void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
 void setCaptureRes(COMPONENT_T *camera, int width, int height)
 {
   //needs to check width and height to see if compatible with rpi
-
+  printf("in setCapture\n");
+  
   OMX_PARAM_PORTDEFINITIONTYPE port_params;
   OMX_ERRORTYPE OMXstatus;
 
@@ -56,6 +57,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   port_params.format.image.nFrameHeight = height;
   port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
   port_params.format.image.nSliceHeight = 0;  //notneeded?
+  //  port_params.format.image.eColorFormat = OMX_COLOR_Format32bitARGB8888;
   //set changes
   OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if(OMXstatus != OMX_ErrorNone)
@@ -70,48 +72,51 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter (2) In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-  
+
+  //print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
 
 }
 
 //set preview res
 void setPreviewRes(COMPONENT_T *camera, int width, int height)
 {
-    //needs to check width and height to see if compatible with rpi
+  //needs to check width and height to see if compatible with rpi
+  printf("in setPreviewRes\n");
+  
+  OMX_PARAM_PORTDEFINITIONTYPE port_params;
+  OMX_ERRORTYPE OMXstatus;
 
-    OMX_PARAM_PORTDEFINITIONTYPE port_params;
-    OMX_ERRORTYPE OMXstatus;
-
-    memset(&port_params, 0, sizeof(port_params));
-    port_params.nVersion.nVersion = OMX_VERSION;
-    port_params.nSize = sizeof(port_params);
-    port_params.nPortIndex = 70;
-    //prepopulate structure
-    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    //change needed params
-    port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
-    port_params.format.video.nFrameWidth = width;
-    port_params.format.video.nFrameHeight = height;
-    port_params.format.video.nStride = width;
-    port_params.format.video.nSliceHeight = height;
-    port_params.format.video.xFramerate = 24 << 16;
-    //set changes
-    OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+  memset(&port_params, 0, sizeof(port_params));
+  port_params.nVersion.nVersion = OMX_VERSION;
+  port_params.nSize = sizeof(port_params);
+  port_params.nPortIndex = 70;
+  //prepopulate structure
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+  //change needed params
+  port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  port_params.format.video.nFrameWidth = width;
+  port_params.format.video.nFrameHeight = height;
+  port_params.format.video.nStride = width;
+  port_params.format.video.nSliceHeight = height;
+  port_params.format.video.xFramerate = 24 << 16;
+  //set changes
+  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
     
-    //print current config
-    memset(&port_params, 0, sizeof(port_params));
-    port_params.nVersion.nVersion = OMX_VERSION;
-    port_params.nSize = sizeof(port_params);
-    port_params.nPortIndex = 70;
+  //print current config
+  memset(&port_params, 0, sizeof(port_params));
+  port_params.nVersion.nVersion = OMX_VERSION;
+  port_params.nSize = sizeof(port_params);
+  port_params.nPortIndex = 70;
 
-    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    
+  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
+  if (OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
+
+  //print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);      
 }
 
 
@@ -127,6 +132,11 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
 */
 void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int screenWidth, int screenHeight)
 {
+
+  //currently broken but no idea why
+
+  
+  printf("in setRenderConfig\n");
   OMX_ERRORTYPE OMXstatus;
   
   OMX_CONFIG_DISPLAYREGIONTYPE render_config;
@@ -139,18 +149,24 @@ void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int scre
   render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
 					   |OMX_DISPLAY_SET_FULLSCREEN
 					   |OMX_DISPLAY_SET_NOASPECT
-					   |OMX_DISPLAY_SET_MODE);
-  render_config.fullscreen = OMX_FALSE;
-  render_config.noaspect = OMX_FALSE;
- 
-  render_config.dest_rect.width = screenWidth;
-  render_config.dest_rect.height = screenHeight;
+    					   |OMX_DISPLAY_SET_MODE);
+  
+  render_config.dest_rect.width = screenWidth/2;
+  render_config.dest_rect.height = screenHeight/2;
+  render_config.dest_rect.x_offset = screenWidth/4;
+  render_config.dest_rect.y_offset = screenHeight/4;
 
+  render_config.fullscreen = OMX_FALSE;
+  
+  render_config.noaspect = OMX_FALSE;
+  
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
   
   OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));  
+    printf("BLORP BLORP Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
+
+  //print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
 }
 
 #define JPEG_FORMAT 1
@@ -167,8 +183,9 @@ TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 // WEIRDLY ONLY ACCEPTS JPEG?
 // I BELIVE THIS TO BE CAUSED BY THE eColorFormat but I think it needs to match on camera and image_encode
 
-void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
+void setParamImageFormat(COMPONENT_T *image_encode, int formatType)
 {
+  printf("in setParamImageFormat\n");
   OMX_ERRORTYPE OMXstatus;
   
   //image format stucture */
@@ -177,29 +194,22 @@ void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int for
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
 
-  //populate image_format with information from the camera port
-  image_format.nPortIndex = 72;
-
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamImagePortFormat, &image_format);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
-  
   image_format.nPortIndex = 341;
-  // image_format.eColorFormat = OMX_COLOR_Format24bitRGB888;
+  //image_format.eColorFormat = OMX_COLOR_Format32bitARGB8888;
   image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
-  image_format.nVersion.nVersion = OMX_VERSION;
-  image_format.nSize = sizeof(image_format);
-
-  //print_OMX_IMAGE_PORTDEFINITIONTYPE(image_format);
+  
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
-    printf("Error setting Paramter. Error = %s\n", err2str(OMXstatus));
+    printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
+
 }
 
 //currently needs the image encode to be executing and a tunnel inplace
 //this maybe should be ensured through the init 
 void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 {
+  printf("in savePhoto\n");
+  
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
   
@@ -385,12 +395,16 @@ int main(int argc, char *argv[])
 
 
   //image format stucture */
-  setParamImageFormat(image_encode, camera, JPEG_FORMAT);
+  setParamImageFormat(image_encode, JPEG_FORMAT);
    
   /////////////////////////////////////////////////////////////////
   // Main Meat
   /////////////////////////////////////////////////////////////////
-  
+
+
+  //DELETE
+
+
   //setup tunnel of camera preview to renderer
   set_tunnel(&tunnel_camera_to_render, camera, 70, video_render, 90);
   ilclient_setup_tunnel(&tunnel_camera_to_render, 0, 0);
@@ -443,7 +457,9 @@ int main(int argc, char *argv[])
   printState(ilclient_get_handle(image_encode));
   
   savePhoto(camera, image_encode, file_out2);
-
+  
+  //DELETE
+  
   sleep(2);
   /////////////////////////////////////////////////////////////////
   //CLEANUP
@@ -469,4 +485,5 @@ int main(int argc, char *argv[])
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data)
 {
   fprintf(stderr, "OMX error!!! %s\n", err2str(data));
+  //exit(EXIT_FAILURE);
 }
