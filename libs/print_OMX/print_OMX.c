@@ -432,6 +432,7 @@ void print_OMX_PARAM_PORTDEFINITIONTYPE(OMX_PARAM_PORTDEFINITIONTYPE params)
 
 void print_OMX_IMAGE_PARAM_PORTFORMATTYPE(OMX_IMAGE_PARAM_PORTFORMATTYPE image_params)
 {
+  printf("-----------------------\n");
   printf("nSize = %d\n", (int)image_params.nSize);
   printf("nVersion.nVersion.nVersionMajor = %d\n", (int)image_params.nVersion.s.nVersionMajor);
   printf("                 .nVersionMinor = %d\n", (int)image_params.nVersion.s.nVersionMinor);
@@ -444,4 +445,5 @@ void print_OMX_IMAGE_PARAM_PORTFORMATTYPE(OMX_IMAGE_PARAM_PORTFORMATTYPE image_p
   print_OMX_IMAGE_CODINGTYPE(image_params.eCompressionFormat);
   printf("   .eColorFormat = ");
   print_OMX_COLOR_FORMATTYPE(image_params.eColorFormat);
+  printf("-----------------------\n");
 }

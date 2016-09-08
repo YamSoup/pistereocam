@@ -57,7 +57,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   port_params.format.image.nFrameHeight = height;
   port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
   port_params.format.image.nSliceHeight = 0;  //notneeded?
-  //  port_params.format.image.eColorFormat = OMX_COLOR_Format32bitARGB8888;
+    
   //set changes
   OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if(OMXstatus != OMX_ErrorNone)
@@ -95,7 +95,6 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
   //change needed params
-  port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   port_params.format.video.nFrameWidth = width;
   port_params.format.video.nFrameHeight = height;
   port_params.format.video.nStride = width;
@@ -160,13 +159,13 @@ void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int scre
   
   OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
-    printf("BLORP BLORP Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
+    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
 
   //print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
 }
 
 #define JPEG_FORMAT 1
-#define BMP_FORMAT 3
+
 /*
 Change formatType to enum as above 
 
@@ -175,11 +174,12 @@ AS PARAM CHANGES CAN ONLY BE DONE BEFORE A COMPONENT IS EXECUTING
 TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 */
 
-// horribly broken DONT USE THE SAME STRUCTURE TO GET AND SET!!!!
+// 
 // WEIRDLY ONLY ACCEPTS JPEG?
-// I BELIVE THIS TO BE CAUSED BY THE eColorFormat but I think it needs to match on camera and image_encode
+// THE CAMERA REFUSES TO OUTPUT ANYTHING BUT YUV
+// THIS COMPNENT WILL ONLY SAVE TO JPEG WHEN YUV IS THE INPUT :(
 
-void setParamImageFormat(COMPONENT_T *image_encode, int formatType)
+void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
 {
   printf("in setParamImageFormat\n");
   OMX_ERRORTYPE OMXstatus;
@@ -191,12 +191,11 @@ void setParamImageFormat(COMPONENT_T *image_encode, int formatType)
   image_format.nSize = sizeof(image_format);
 
   image_format.nPortIndex = 341;
-  //image_format.eColorFormat = OMX_COLOR_Format32bitARGB8888;
-  image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
+  image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;  
   
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Paramter. Error = %s\n", err2str(OMXstatus));
+    printf("Error Setting Paramter(2). Error = %s\n", err2str(OMXstatus));
 
 }
 
@@ -233,11 +232,14 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
   while(1)
     {
       decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
-      printf("decode_out bytes = %d\n", decode_out->nFilledLen);
-      printf("decode_out bufferflags = %d\n\n", decode_out->nFlags);
+      printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
+      printf("decode_out bufferflags = %d\n", decode_out->nFlags);
       
       if(decode_out->nFilledLen != 0) 
+	{
 	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+        
+	}
       if(decode_out->nFlags == 1)
 	{
 	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
@@ -391,7 +393,7 @@ int main(int argc, char *argv[])
 
 
   //image format stucture */
-  setParamImageFormat(image_encode, JPEG_FORMAT);
+  setParamImageFormat(image_encode, camera, JPEG_FORMAT);
    
   /////////////////////////////////////////////////////////////////
   // Main Meat
@@ -399,6 +401,8 @@ int main(int argc, char *argv[])
 
 
   //DELETE
+#define DEBUG
+#ifdef DEBUG
 
 
   //setup tunnel of camera preview to renderer
@@ -454,8 +458,10 @@ int main(int argc, char *argv[])
   
   savePhoto(camera, image_encode, file_out2);
   
-  //DELETE
   
+  //DELETE 
+#endif
+    
   sleep(2);
   /////////////////////////////////////////////////////////////////
   //CLEANUP
