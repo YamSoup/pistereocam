@@ -57,7 +57,9 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   port_params.format.image.nFrameHeight = height;
   port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
   port_params.format.image.nSliceHeight = 0;  //notneeded?
-    
+  //this does not work :( camera seams only to output YUV
+  //port_params.format.image.eColorFormat = OMX_COLOR_Format32bitABGR8888;
+  
   //set changes
   OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if(OMXstatus != OMX_ErrorNone)
@@ -190,12 +192,13 @@ void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int for
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
 
-  image_format.nPortIndex = 341;
-  image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;  
-  
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
+  image_format.nPortIndex = 72;
+  //camera
+  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Paramter(2). Error = %s\n", err2str(OMXstatus));
+
+  print_OMX_IMAGE_PARAM_PORTFORMATTYPE(image_format);
 
 }
 
@@ -401,7 +404,7 @@ int main(int argc, char *argv[])
 
 
   //DELETE
-#define DEBUG
+  //#define DEBUG
 #ifdef DEBUG
 
 
