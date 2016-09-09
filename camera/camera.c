@@ -120,9 +120,23 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
   //print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);      
 }
 
-
-
-#define FULLSCREEN 1
+//probably needs an enum
+enum display_types
+  {
+    DISPLAY_FULLSCREEN = 1,
+    DISPLAY_SIDEBYSIDE_LEFT = 21,
+    DISPLAY_SIDEBYSIDE_RIGHT = 22,
+    DISPLAY_QUARTER_TOP_LEFT = 41,
+    DISPLAY_QUARTER_TOP_RIGHT = 42,
+    DISPLAY_QUARTER_BOTTOM_LEFT = 43,
+    DISPLAY_QUARTER_BOTTOM_RIGHT = 44,
+    DISPLAY_SIXTH_TOP_LEFT = 61,
+    DISPLAY_SIXTH_TOP_MIDDLE = 62,
+    DISPLAY_SIXTH_TOP_RIGHT = 63,
+    DISPLAY_SIXTH_BOTTOM_LEFT = 64,
+    DISPLAY_SIXTH_BOTTOM_MIDDLE = 65,
+    DISPLAY_SIXTH_BOTTOM_RIGHT = 66,    
+  };
 
 /*
   this functions sets where the render is displayed on the screen
@@ -131,7 +145,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
 
   TODO change presetScreenConfig to enum when enum is created
 */
-void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int screenWidth, int screenHeight)
+void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenConfig, int screenWidth, int screenHeight)
 {
   printf("in setRenderConfig\n");
   OMX_ERRORTYPE OMXstatus;
@@ -147,16 +161,104 @@ void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int scre
 					   |OMX_DISPLAY_SET_FULLSCREEN
 					   |OMX_DISPLAY_SET_NOASPECT
     					   |OMX_DISPLAY_SET_MODE);
+  //FULLSCREEN
+  if(presetScreenConfig == DISPLAY_FULLSCREEN)
+    {
+      render_config.dest_rect.width = screenWidth;
+      render_config.dest_rect.height = screenHeight;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = 0;
+    }
+  //SIDEBYSIDE
+  else if(presetScreenConfig == DISPLAY_SIDEBYSIDE_LEFT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_SIDEBYSIDE_RIGHT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight;
+      render_config.dest_rect.x_offset = screenWidth/2;
+      render_config.dest_rect.y_offset = 0;
+    }
+  //QUARTER
+  else if(presetScreenConfig == DISPLAY_QUARTER_TOP_LEFT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_QUARTER_TOP_RIGHT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = screenWidth/2;;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_QUARTER_BOTTOM_LEFT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = screenHeight/2;
+    }
+  else if(presetScreenConfig == DISPLAY_QUARTER_BOTTOM_RIGHT)
+    {
+      render_config.dest_rect.width = screenWidth/2;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = screenWidth/2;
+      render_config.dest_rect.y_offset = screenHeight/2;
+    }
+  //SIXTH
+  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_LEFT)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_MIDDLE)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = screenWidth/3;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_RIGHT)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = (screenWidth/3)*2;
+      render_config.dest_rect.y_offset = 0;
+    }
+  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_LEFT)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = 0;
+      render_config.dest_rect.y_offset = screenHeight/2;
+    }
+  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_MIDDLE)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = screenWidth/3;
+      render_config.dest_rect.y_offset = screenHeight/2;
+    }
+  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_RIGHT)
+    {
+      render_config.dest_rect.width = screenWidth/3;
+      render_config.dest_rect.height = screenHeight/2;
+      render_config.dest_rect.x_offset = (screenWidth/3)*2;
+      render_config.dest_rect.y_offset = screenHeight/2;
+    }
   
-  render_config.dest_rect.width = screenWidth/2;
-  render_config.dest_rect.height = screenHeight/2;
-  render_config.dest_rect.x_offset = screenWidth/4;
-  render_config.dest_rect.y_offset = screenHeight/4;
-
-  render_config.fullscreen = OMX_FALSE;
-  
+  render_config.fullscreen = OMX_FALSE;  
   render_config.noaspect = OMX_FALSE;
-  
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
   
   OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
@@ -166,7 +268,9 @@ void setRenderConfig(COMPONENT_T *video_render, int presetScreenConfig, int scre
   //print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
 }
 
-#define JPEG_FORMAT 1
+#define JPEG_HIGH_FORMAT 1
+#define JPEG_MEDIUM_FORMAT 2
+#define JPEG_LOW_FORMAT 3
 
 /*
 Change formatType to enum as above 
@@ -181,7 +285,7 @@ TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 // THE CAMERA REFUSES TO OUTPUT ANYTHING BUT YUV
 // THIS COMPNENT WILL ONLY SAVE TO JPEG WHEN YUV IS THE INPUT :(
 
-void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int formatType)
+void setParamImageFormat(COMPONENT_T *image_encode, int formatType)
 {
   printf("in setParamImageFormat\n");
   OMX_ERRORTYPE OMXstatus;
@@ -192,13 +296,34 @@ void setParamImageFormat(COMPONENT_T *image_encode, COMPONENT_T *camera, int for
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
 
-  image_format.nPortIndex = 72;
-  //camera
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamImagePortFormat, &image_format);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Paramter(2). Error = %s\n", err2str(OMXstatus));
+  image_format.nPortIndex = 341;
 
-  print_OMX_IMAGE_PARAM_PORTFORMATTYPE(image_format);
+  if(formatType == JPEG_HIGH_FORMAT || formatType == JPEG_MEDIUM_FORMAT || formatType == JPEG_LOW_FORMAT)
+    {
+      image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
+        
+      OMX_IMAGE_PARAM_QFACTORTYPE compression_format;
+      memset(&compression_format, 0, sizeof(compression_format));
+      compression_format.nVersion.nVersion = OMX_VERSION;
+      compression_format.nSize = sizeof(compression_format);
+
+      compression_format.nPortIndex = 341;
+      if(formatType == JPEG_HIGH_FORMAT)
+	compression_format.nQFactor = 100;
+      else if (formatType == JPEG_MEDIUM_FORMAT)
+	compression_format.nQFactor = 60;
+      else if (formatType == JPEG_LOW_FORMAT)
+	compression_format.nQFactor = 10;
+      
+      OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamQFactor, &compression_format);
+      if(OMXstatus != OMX_ErrorNone)
+	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
+    }
+  
+  OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
+
 
 }
 
@@ -375,7 +500,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  setRenderConfig(video_render, FULLSCREEN, screen_width, screen_height);  
+  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_LEFT, screen_width, screen_height);  
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -396,7 +521,7 @@ int main(int argc, char *argv[])
 
 
   //image format stucture */
-  setParamImageFormat(image_encode, camera, JPEG_FORMAT);
+  setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
    
   /////////////////////////////////////////////////////////////////
   // Main Meat
@@ -405,7 +530,7 @@ int main(int argc, char *argv[])
 
   //DELETE
   //#define DEBUG
-#ifdef DEBUG
+#ifndef DEBUG
 
 
   //setup tunnel of camera preview to renderer
@@ -455,9 +580,33 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////
   savePhoto(camera, image_encode, file_out1);
   //sleep for 2 secs
+
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_RIGHT, screen_width, screen_height);  
   sleep(2);
 
-  printState(ilclient_get_handle(image_encode));
+  setRenderConfig(video_render, DISPLAY_QUARTER_TOP_LEFT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_QUARTER_TOP_RIGHT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_QUARTER_BOTTOM_LEFT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_QUARTER_BOTTOM_RIGHT, screen_width, screen_height);  
+  sleep(2);
+
+  
+  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_LEFT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_MIDDLE, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_RIGHT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_LEFT, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_MIDDLE, screen_width, screen_height);  
+  sleep(2);
+  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_RIGHT, screen_width, screen_height);  
+  sleep(2);
   
   savePhoto(camera, image_encode, file_out2);
   
