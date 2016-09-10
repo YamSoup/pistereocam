@@ -35,6 +35,21 @@ void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
 //
 /////////////////////////////////////////////////////////////////
 
+struct screenSize
+{
+  uint32_t width;
+  uint32_t height;
+};
+
+struct screenSize returnScreenSize(void)
+{
+  struct screenSize CurrentScreenSize;
+  //super special broadcom only function
+  graphics_get_display_size(0/*framebuffer 0*/, &CurrentScreenSize.width, &CurrentScreenSize.height);
+  printf("screenWidth = %d, screenHeight = %d\n", (int)CurrentScreenSize.width, (int)CurrentScreenSize.height);
+  return CurrentScreenSize;
+}
+    
 
 void setCaptureRes(COMPONENT_T *camera, int width, int height)
 {
@@ -578,36 +593,11 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////
   // Code that takes picture
   //////////////////////////////////////////////////////
-  savePhoto(camera, image_encode, file_out1);
-  //sleep for 2 secs
 
+  savePhoto(camera, image_encode, file_out1);
   sleep(2);
   setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_RIGHT, screen_width, screen_height);  
-  sleep(2);
-
-  setRenderConfig(video_render, DISPLAY_QUARTER_TOP_LEFT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_QUARTER_TOP_RIGHT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_QUARTER_BOTTOM_LEFT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_QUARTER_BOTTOM_RIGHT, screen_width, screen_height);  
-  sleep(2);
-
-  
-  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_LEFT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_MIDDLE, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIXTH_TOP_RIGHT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_LEFT, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_MIDDLE, screen_width, screen_height);  
-  sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIXTH_BOTTOM_RIGHT, screen_width, screen_height);  
-  sleep(2);
-  
+  sleep(2);  
   savePhoto(camera, image_encode, file_out2);
   
   
