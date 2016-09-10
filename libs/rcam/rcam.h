@@ -14,6 +14,7 @@
 /////////////////////////////////////////////////////////////////
 // Data Stuctures
 
+//used to comunicate with remoteCam
 enum rcam_command
 {
     NO_COMMAND = 0,
@@ -23,6 +24,39 @@ enum rcam_command
     STOP_PREVIEW = 21,
     TAKE_PHOTO = 30,
     END_REMOTE_CAM = 99
+};
+
+//used in setRenderConfig
+enum display_types
+  {
+    DISPLAY_FULLSCREEN = 1,
+    DISPLAY_SIDEBYSIDE_LEFT = 21,
+    DISPLAY_SIDEBYSIDE_RIGHT = 22,
+    DISPLAY_QUARTER_TOP_LEFT = 41,
+    DISPLAY_QUARTER_TOP_RIGHT = 42,
+    DISPLAY_QUARTER_BOTTOM_LEFT = 43,
+    DISPLAY_QUARTER_BOTTOM_RIGHT = 44,
+    DISPLAY_SIXTH_TOP_LEFT = 61,
+    DISPLAY_SIXTH_TOP_MIDDLE = 62,
+    DISPLAY_SIXTH_TOP_RIGHT = 63,
+    DISPLAY_SIXTH_BOTTOM_LEFT = 64,
+    DISPLAY_SIXTH_BOTTOM_MIDDLE = 65,
+    DISPLAY_SIXTH_BOTTOM_RIGHT = 66,    
+  };
+
+//used in setParamImageFormat
+enum formatType
+{
+  JPEG_HIGH_FORMAT = 1,
+  JPEG_MEDIUM_FORMAT = 2,
+  JPEG_LOW_FORMAT = 3
+};
+
+//used for returnScreenSize
+struct screenSizeStruct
+{
+  uint32_t width;
+  uint32_t height;
 };
 
 //needed as a thread can only be passed 1 argument
@@ -56,7 +90,19 @@ struct cameraControl
 
 int testFunction(ILCLIENT_T *client);
 
+void *initLocalCamera(void *VoidPtrArgs);
 void *initServerRcam(void *VoidPtrArgs);
 void deInitServerRcam(struct cameraControl *toChange);
+
+
+// functions that were originally in camera.c
+struct screenSizeStruct returnScreenSize(void);
+
+void setCaptureRes(COMPONENT_T *camera, int width, int height);
+void setPreviewRes(COMPONENT_T *camera, int width, int height);
+void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenConfig);
+void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
+
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out);
 
 #endif // _RCAM_H

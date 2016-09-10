@@ -23,6 +23,8 @@
 #include "bcm_host.h"
 #include "ilclient.h"
 
+#include "rcam.h"
+
 /////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 /////////////////////////////////////////////////////////////////
@@ -35,257 +37,7 @@ void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
 //
 /////////////////////////////////////////////////////////////////
 
-struct screenSize
-{
-  uint32_t width;
-  uint32_t height;
-};
 
-struct screenSize returnScreenSize(void)
-{
-  struct screenSize CurrentScreenSize;
-  //super special broadcom only function
-  graphics_get_display_size(0/*framebuffer 0*/, &CurrentScreenSize.width, &CurrentScreenSize.height);
-  printf("screenWidth = %d, screenHeight = %d\n", (int)CurrentScreenSize.width, (int)CurrentScreenSize.height);
-  return CurrentScreenSize;
-}
-    
-
-void setCaptureRes(COMPONENT_T *camera, int width, int height)
-{
-  //needs to check width and height to see if compatible with rpi
-  printf("in setCapture\n");
-  
-  OMX_PARAM_PORTDEFINITIONTYPE port_params;
-  OMX_ERRORTYPE OMXstatus;
-
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 72;
-
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-  //change needed params
-  port_params.format.image.nFrameWidth = width;
-  port_params.format.image.nFrameHeight = height;
-  port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
-  port_params.format.image.nSliceHeight = 0;  //notneeded?
-  //this does not work :( camera seams only to output YUV
-  //port_params.format.image.eColorFormat = OMX_COLOR_Format32bitABGR8888;
-  
-  //set changes
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-
-  //print current config 
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 72;
-
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter (2) In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-
-  //print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
-
-}
-
-//set preview res
-void setPreviewRes(COMPONENT_T *camera, int width, int height)
-{
-  //needs to check width and height to see if compatible with rpi
-  printf("in setPreviewRes\n");
-  
-  OMX_PARAM_PORTDEFINITIONTYPE port_params;
-  OMX_ERRORTYPE OMXstatus;
-
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 70;
-  //prepopulate structure
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-  //change needed params
-  port_params.format.video.nFrameWidth = width;
-  port_params.format.video.nFrameHeight = height;
-  port_params.format.video.nStride = width;
-  port_params.format.video.nSliceHeight = height;
-  port_params.format.video.xFramerate = 24 << 16;
-  //set changes
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    
-  //print current config
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 70;
-
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-
-  //print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);      
-}
-
-//probably needs an enum
-enum display_types
-  {
-    DISPLAY_FULLSCREEN = 1,
-    DISPLAY_SIDEBYSIDE_LEFT = 21,
-    DISPLAY_SIDEBYSIDE_RIGHT = 22,
-    DISPLAY_QUARTER_TOP_LEFT = 41,
-    DISPLAY_QUARTER_TOP_RIGHT = 42,
-    DISPLAY_QUARTER_BOTTOM_LEFT = 43,
-    DISPLAY_QUARTER_BOTTOM_RIGHT = 44,
-    DISPLAY_SIXTH_TOP_LEFT = 61,
-    DISPLAY_SIXTH_TOP_MIDDLE = 62,
-    DISPLAY_SIXTH_TOP_RIGHT = 63,
-    DISPLAY_SIXTH_BOTTOM_LEFT = 64,
-    DISPLAY_SIXTH_BOTTOM_MIDDLE = 65,
-    DISPLAY_SIXTH_BOTTOM_RIGHT = 66,    
-  };
-
-/*
-  this functions sets where the render is displayed on the screen
-  presetScreenConfig will be a ENUM in rcam.h 
-  presets will include FULLSCREEN, SIDEBYSIDELEFT, SIDEBYSIDERIGHT
-
-  TODO change presetScreenConfig to enum when enum is created
-*/
-void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenConfig, int screenWidth, int screenHeight)
-{
-  printf("in setRenderConfig\n");
-  OMX_ERRORTYPE OMXstatus;
-  
-  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
-  memset(&render_config, 0, sizeof(render_config));
-  render_config.nVersion.nVersion = OMX_VERSION;
-  render_config.nSize = sizeof(render_config);
-  render_config.nPortIndex = 90;
-  
-  //curently only does fullscreen modify the stucture below with switch/if statements for the others
-  render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
-					   |OMX_DISPLAY_SET_FULLSCREEN
-					   |OMX_DISPLAY_SET_NOASPECT
-    					   |OMX_DISPLAY_SET_MODE);
-  //FULLSCREEN
-  if(presetScreenConfig == DISPLAY_FULLSCREEN)
-    {
-      render_config.dest_rect.width = screenWidth;
-      render_config.dest_rect.height = screenHeight;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = 0;
-    }
-  //SIDEBYSIDE
-  else if(presetScreenConfig == DISPLAY_SIDEBYSIDE_LEFT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_SIDEBYSIDE_RIGHT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight;
-      render_config.dest_rect.x_offset = screenWidth/2;
-      render_config.dest_rect.y_offset = 0;
-    }
-  //QUARTER
-  else if(presetScreenConfig == DISPLAY_QUARTER_TOP_LEFT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_QUARTER_TOP_RIGHT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = screenWidth/2;;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_QUARTER_BOTTOM_LEFT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = screenHeight/2;
-    }
-  else if(presetScreenConfig == DISPLAY_QUARTER_BOTTOM_RIGHT)
-    {
-      render_config.dest_rect.width = screenWidth/2;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = screenWidth/2;
-      render_config.dest_rect.y_offset = screenHeight/2;
-    }
-  //SIXTH
-  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_LEFT)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_MIDDLE)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = screenWidth/3;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_SIXTH_TOP_RIGHT)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = (screenWidth/3)*2;
-      render_config.dest_rect.y_offset = 0;
-    }
-  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_LEFT)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = 0;
-      render_config.dest_rect.y_offset = screenHeight/2;
-    }
-  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_MIDDLE)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = screenWidth/3;
-      render_config.dest_rect.y_offset = screenHeight/2;
-    }
-  else if(presetScreenConfig == DISPLAY_SIXTH_BOTTOM_RIGHT)
-    {
-      render_config.dest_rect.width = screenWidth/3;
-      render_config.dest_rect.height = screenHeight/2;
-      render_config.dest_rect.x_offset = (screenWidth/3)*2;
-      render_config.dest_rect.y_offset = screenHeight/2;
-    }
-  
-  render_config.fullscreen = OMX_FALSE;  
-  render_config.noaspect = OMX_FALSE;
-  render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
-  
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
-
-  //print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
-}
-
-#define JPEG_HIGH_FORMAT 1
-#define JPEG_MEDIUM_FORMAT 2
-#define JPEG_LOW_FORMAT 3
 
 /*
 Change formatType to enum as above 
@@ -300,115 +52,8 @@ TO MOVE COMPONENTS TO IDLE THE TUNNELS WOULD NEED TO BE DISABLED
 // THE CAMERA REFUSES TO OUTPUT ANYTHING BUT YUV
 // THIS COMPNENT WILL ONLY SAVE TO JPEG WHEN YUV IS THE INPUT :(
 
-void setParamImageFormat(COMPONENT_T *image_encode, int formatType)
-{
-  printf("in setParamImageFormat\n");
-  OMX_ERRORTYPE OMXstatus;
-  
-  //image format stucture */
-  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;  
-  memset(&image_format, 0, sizeof(image_format));
-  image_format.nVersion.nVersion = OMX_VERSION;
-  image_format.nSize = sizeof(image_format);
-
-  image_format.nPortIndex = 341;
-
-  if(formatType == JPEG_HIGH_FORMAT || formatType == JPEG_MEDIUM_FORMAT || formatType == JPEG_LOW_FORMAT)
-    {
-      image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
-        
-      OMX_IMAGE_PARAM_QFACTORTYPE compression_format;
-      memset(&compression_format, 0, sizeof(compression_format));
-      compression_format.nVersion.nVersion = OMX_VERSION;
-      compression_format.nSize = sizeof(compression_format);
-
-      compression_format.nPortIndex = 341;
-      if(formatType == JPEG_HIGH_FORMAT)
-	compression_format.nQFactor = 100;
-      else if (formatType == JPEG_MEDIUM_FORMAT)
-	compression_format.nQFactor = 60;
-      else if (formatType == JPEG_LOW_FORMAT)
-	compression_format.nQFactor = 10;
-      
-      OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamQFactor, &compression_format);
-      if(OMXstatus != OMX_ErrorNone)
-	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
-    }
-  
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
 
 
-}
-
-//currently needs the image encode to be executing and a tunnel inplace
-//this maybe should be ensured through the init 
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
-{
-  printf("in savePhoto\n");
-  
-  OMX_ERRORTYPE OMXstatus;
-  OMX_BUFFERHEADERTYPE *decode_out;
-  
-  printf("capture started\n");
-
-  // needed to notify camera component of image capture
-  OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
-  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
-  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
-  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
-  still_capture_in_progress.nPortIndex = 72;
-  still_capture_in_progress.bEnabled = OMX_FALSE;
-
-  //tell API port is taking picture - appears to be nessesery!
-  still_capture_in_progress.bEnabled = OMX_TRUE;
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
-			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to set Config (1)\n");
-      exit(EXIT_FAILURE);
-    }  
-
-  while(1)
-    {
-      decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
-      printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
-      printf("decode_out bufferflags = %d\n", decode_out->nFlags);
-      
-      if(decode_out->nFilledLen != 0) 
-	{
-	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
-        
-	}
-      if(decode_out->nFlags == 1)
-	{
-	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
-	  break;
-	}
-      OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
-    }
-
-  //tell API port is finished capture
-  memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
-  still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
-  still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
-  still_capture_in_progress.nPortIndex = 72;
-  still_capture_in_progress.bEnabled = OMX_FALSE;
-  
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
-			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr, "unable to set Config (1)\n");
-      exit(EXIT_FAILURE);
-    }  
-  
-  printf("captureSaved\n");
-}
 
 
 /////////////////////////////////////////////////////////////////
@@ -515,7 +160,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_LEFT, screen_width, screen_height);  
+  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_LEFT);  
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -596,10 +241,9 @@ int main(int argc, char *argv[])
 
   savePhoto(camera, image_encode, file_out1);
   sleep(2);
-  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_RIGHT, screen_width, screen_height);  
+  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_RIGHT);  
   sleep(2);  
   savePhoto(camera, image_encode, file_out2);
-  
   
   //DELETE 
 #endif
