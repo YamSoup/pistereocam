@@ -20,11 +20,181 @@ next task will be to simplify the initServerRcam using the same functions
 
 void *initLocalCamera(void *VoidPtrArgs)
 {
+  printf("in initLocalCamera\n");
+  struct cameraControl *currentArgs = VoidPtrArgs;
+
+  pthread_mutex_lock(&currentArgs->mutexPtr);  
+  ILCLIENT_T *client = currentArgs->client;
+  pthread_mutex_unlock(&currentArgs->mutexPtr);
+  
+  COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
+  OMX_ERRORTYPE OMXstatus;
+
+  FILE *file_out1, *file_out2;
+  file_out1 = fopen("pic1", "wb");
+  file_out2 = fopen("pic2", "wb");
+  
+  TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
+  memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
+  memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));  
+    
+  /////////////////////////////////////////////////////////////////
+  // STARTUP
+  /////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////
+  //
+  // Initalize Components
+  //
+  /////////////////////////////////////////////////////////////////
+  
+  ///////////////////////////////////////////
+  ////initialise camera////
+  ///////////////////////////////////////////
+  ilclient_create_component(client,
+			    &camera,
+			    "camera",
+			    ILCLIENT_DISABLE_ALL_PORTS);
+  
+  OMXstatus = ilclient_change_component_state(camera, OMX_StateIdle);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move camera component to Idle (1)");
+      exit(EXIT_FAILURE);
+    }
+
+  //change the capture resolution
+  setCaptureRes(camera, 2592, 1944);
+
+  //change the preview resolution
+  setPreviewRes(camera, 320, 240);
+  
+  ///////////////////////////////////////////
+  ////Initialise video render////
+  ///////////////////////////////////////////
+
+  ilclient_create_component(client,
+			    &video_render,
+			    "video_render",
+			    ILCLIENT_DISABLE_ALL_PORTS
+			    );
+
+  OMXstatus = ilclient_change_component_state(video_render, OMX_StateIdle);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move render component to Idle (1)\n");
+      exit(EXIT_FAILURE);
+    }
+
+  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_LEFT);  
+
+  ///////////////////////////////////////////
+  ////Initalise Image Encoder///
+  ///////////////////////////////////////////
+  ilclient_create_component(client,
+			    &image_encode,
+			    "image_encode",
+			    ILCLIENT_DISABLE_ALL_PORTS
+			    /*| ILCLIENT_ENABLE_INPUT_BUFFERS*/
+			    | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
+
+  OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move image encode component to Idle (1)\n");
+      exit(EXIT_FAILURE);
+    }
+
+  //image format Param set */
+  setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
+   
+  /////////////////////////////////////////////////////////////////
+  // Main Meat
+  /////////////////////////////////////////////////////////////////
+
+  //setup tunnel of camera preview to renderer
+  set_tunnel(&tunnel_camera_to_render, camera, 70, video_render, 90);
+  ilclient_setup_tunnel(&tunnel_camera_to_render, 0, 0);
+  
+  // change camera component to executing
+  OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move camera component to Executing (1)\n");
+      exit(EXIT_FAILURE);
+    }
+  printState(ilclient_get_handle(camera));
+
+  //change preview render to executing
+  OMXstatus = ilclient_change_component_state(video_render, OMX_StateExecuting);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move video render component to Executing (1)\n");
+      exit(EXIT_FAILURE);
+    }
+  printState(ilclient_get_handle(video_render));
+  
+  //enable port and buffers for output port of image encode
+  ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);  
+  ilclient_enable_port(image_encode, 341);
+
+  //setup tunnel from camera image port too image encode
+  set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);    
+  ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
+
+  //change image_encode to executing
+  OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
+      exit(EXIT_FAILURE);
+    }
+  printState(ilclient_get_handle(image_encode));
+
+  //////////////////////////////////////////////////////
+  // Code that takes picture
+  //////////////////////////////////////////////////////
+
+  while(1)
+    {
+      printf(".");
+      pthread_mutex_lock(&currentArgs->mutexPtr);  
+      if (currentArgs->rcamDeInit == true)
+	{
+	  pthread_mutex_unlock(&currentArgs->mutexPtr);
+	  break;
+	}
+      else if (currentArgs->takePhoto == true)
+	{
+	  printf("take photo yeah\n");
+	  savePhoto(camera, image_encode, file_out1);
+	  currentArgs->takePhoto = false;
+	}
+      pthread_mutex_unlock(&currentArgs->mutexPtr);
+    }
+  
+  /////////////////////////////////////////////////////////////////
+  //CLEANUP
+  /////////////////////////////////////////////////////////////////
+
+  //close files
+  fclose(file_out1);
+  fclose(file_out2);
+  
+  //Disable components
+  pthread_exit(NULL);  
+
+  //check all components have been cleaned up
+
+
   
 }
 
 
 /*
+*********************************************
+remote camera
+*********************************************
 This function creates a renderer on the server and comunicates with rcam client program to
 display a preview until stopped
 Somehow needs to take a photo as well?
@@ -53,8 +223,7 @@ void *initServerRcam(void *VoidPtrArgs)
 
   ///////////////////////////////////////////
   ////Variables
-  ///////////////////////////////////////////
-
+ 
   COMPONENT_T *client_video_render = NULL;
   OMX_ERRORTYPE OMXstatus;
 
@@ -528,6 +697,12 @@ void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenC
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
 }
+
+
+//sets the image format of the image_encode component cant be done while executing
+// WEIRDLY ONLY ACCEPTS JPEG?
+// THE CAMERA REFUSES TO OUTPUT ANYTHING BUT YUV
+// THIS COMPNENT WILL ONLY SAVE TO JPEG WHEN YUV IS THE INPUT :(
 
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 {
