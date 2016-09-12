@@ -20,7 +20,6 @@ next task will be to simplify the initServerRcam using the same functions
 
 void *initLocalCamera(void *VoidPtrArgs)
 {
-  printf("in initLocalCamera\n");
   struct cameraControl *currentArgs = VoidPtrArgs;
 
   pthread_mutex_lock(&currentArgs->mutexPtr);  
@@ -30,9 +29,8 @@ void *initLocalCamera(void *VoidPtrArgs)
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   OMX_ERRORTYPE OMXstatus;
 
-  FILE *file_out1, *file_out2;
+  FILE *file_out1;
   file_out1 = fopen("pic1", "wb");
-  file_out2 = fopen("pic2", "wb");
   
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
@@ -64,10 +62,10 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
 
   //change the capture resolution
-  setCaptureRes(camera, 2592, 1944);
+  setCaptureRes(camera, currentArgs->photoWidth, currentArgs->photoHeight);
 
   //change the preview resolution
-  setPreviewRes(camera, 320, 240);
+  setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight);
   
   ///////////////////////////////////////////
   ////Initialise video render////
@@ -86,7 +84,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       exit(EXIT_FAILURE);
     }
 
-  setRenderConfig(video_render, DISPLAY_SIDEBYSIDE_LEFT);  
+  setRenderConfig(video_render, currentArgs->displayType);  
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -123,8 +121,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move camera component to Executing (1)\n");
       exit(EXIT_FAILURE);
     }
-  printState(ilclient_get_handle(camera));
-
+  
   //change preview render to executing
   OMXstatus = ilclient_change_component_state(video_render, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
@@ -132,8 +129,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move video render component to Executing (1)\n");
       exit(EXIT_FAILURE);
     }
-  printState(ilclient_get_handle(video_render));
-  
+    
   //enable port and buffers for output port of image encode
   ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);  
   ilclient_enable_port(image_encode, 341);
@@ -149,28 +145,29 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
       exit(EXIT_FAILURE);
     }
-  printState(ilclient_get_handle(image_encode));
-
+  
   //////////////////////////////////////////////////////
   // Code that takes picture
   //////////////////////////////////////////////////////
 
+  //needs a lot of work!
+  
   while(1)
     {
-      printf(".");
       pthread_mutex_lock(&currentArgs->mutexPtr);  
       if (currentArgs->rcamDeInit == true)
 	{
+	  printf("end\n");
 	  pthread_mutex_unlock(&currentArgs->mutexPtr);
 	  break;
 	}
       else if (currentArgs->takePhoto == true)
 	{
-	  printf("take photo yeah\n");
 	  savePhoto(camera, image_encode, file_out1);
 	  currentArgs->takePhoto = false;
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
+      
     }
   
   /////////////////////////////////////////////////////////////////
@@ -179,15 +176,11 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   //close files
   fclose(file_out1);
-  fclose(file_out2);
   
   //Disable components
   pthread_exit(NULL);  
 
-  //check all components have been cleaned up
-
-
-  
+  //check all components have been cleaned up  
 }
 
 

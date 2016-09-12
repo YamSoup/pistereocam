@@ -40,7 +40,8 @@ int main(int argc, char *argv[])
 
   ILCLIENT_T *client;
   OMX_ERRORTYPE OMXstatus;
-  struct screenSizeStruct screenSize = returnScreenSize();
+  struct screenSizeStruct screenSize;
+  screenSize = returnScreenSize();
   
   //initialise bcm_host
   bcm_host_init();
@@ -98,26 +99,18 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  sleep(2);
+  sleep(1);
   //////////////////////////////////////////////////////
   //       !!!!!!!!!!!!
-  // NOT WORKING THE LOOP keeps going for some reason maybe copy the loop in rcaminit instead
   //need functions to change the structure like remote.c
-  printf("pre lock\n");
-  pthread_mutex_lock(&cameraControl.mutexPtr);
-  cameraControl.takePhoto == true;
-  printf("changed value of takePhoto\n");
-  pthread_mutex_unlock(&cameraControl.mutexPtr);    
-  printf("post lock\n");
   
-  sleep(2);
-
-  printf("pre rcamdeinit\n");
-  pthread_mutex_lock(&cameraControl.mutexPtr);  
-  cameraControl.rcamDeInit == true;
-  printf("post rcamdeinit\n");
+  pthread_mutex_lock(&cameraControl.mutexPtr);
+  cameraControl.takePhoto = true;
   pthread_mutex_unlock(&cameraControl.mutexPtr);  
 
+  pthread_mutex_lock(&cameraControl.mutexPtr);  
+  cameraControl.rcamDeInit = true;
+  pthread_mutex_unlock(&cameraControl.mutexPtr);  
   
   // wait for the thread to complete
   pthread_join(threadid, NULL);

@@ -27,7 +27,7 @@ enum rcam_command
 };
 
 //used in setRenderConfig
-enum display_types
+enum displayTypes
   {
     DISPLAY_FULLSCREEN = 1,
     DISPLAY_SIDEBYSIDE_LEFT = 21,
@@ -77,9 +77,8 @@ struct cameraControl
   int photoWidth;
   //display (renderer)
   bool displayChanged;
-  int displayType;
-  int screenWidth;
-  int screenHeight;
+  displayTypes displayType;
+  //display size has been removed for a function
   /*
   future implementations may change things like brightness etc
    */
