@@ -87,8 +87,6 @@ int main(int argc, char *argv[])
 
   cameraControl.displayChanged = false;
   cameraControl.displayType = 1; //change to enum
-  cameraControl.screenWidth = screenSize.width; //maybe 0 for local camera 
-  cameraControl.screenHeight = screenSize.height; //or get rid of completly for both local and remote
 
   pthread_t threadid;
   int rc;

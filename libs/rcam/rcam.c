@@ -84,7 +84,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       exit(EXIT_FAILURE);
     }
 
-  setRenderConfig(video_render, currentArgs->displayType);  
+  setRenderConfig(video_render, currentArgs->displayType);
 
   ///////////////////////////////////////////
   ////Initalise Image Encoder///
@@ -305,27 +305,8 @@ void *initServerRcam(void *VoidPtrArgs)
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
 
   //set the position on the screen
-  pthread_mutex_lock(&currentArgs->mutexPtr);  
-
-  render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
-					   |OMX_DISPLAY_SET_FULLSCREEN
-					   |OMX_DISPLAY_SET_NOASPECT
-					   |OMX_DISPLAY_SET_MODE);
-  render_config.fullscreen = OMX_FALSE;
-  render_config.noaspect = OMX_FALSE;
-
-  render_config.dest_rect.width = currentArgs->screenWidth/2;
-  render_config.dest_rect.height = currentArgs->screenHeight;
-  render_config.dest_rect.x_offset = currentArgs->screenWidth/2;
-
-  render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
-
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
-
-  pthread_mutex_unlock(&currentArgs->mutexPtr);  
-
+  setRenderConfig(client_video_render, currentArgs->displayType);  
+  
   //ask ilclient to allocate buffers for client_video_render
   pthread_mutex_lock(&currentArgs->mutexPtr);  
 
@@ -564,7 +545,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
 
 // sets the preview size and position
 // takes the enum displayTypes the contents of which should hopefully be self explanitory
-void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenConfig)
+void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig)
 {
   struct screenSizeStruct currentScreenSize;
   currentScreenSize = returnScreenSize();

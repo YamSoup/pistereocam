@@ -77,7 +77,7 @@ struct cameraControl
   int photoWidth;
   //display (renderer)
   bool displayChanged;
-  displayTypes displayType;
+  enum displayTypes displayType;
   //display size has been removed for a function
   /*
   future implementations may change things like brightness etc
@@ -99,7 +99,7 @@ struct screenSizeStruct returnScreenSize(void);
 
 void setCaptureRes(COMPONENT_T *camera, int width, int height);
 void setPreviewRes(COMPONENT_T *camera, int width, int height);
-void setRenderConfig(COMPONENT_T *video_render, enum display_types presetScreenConfig);
+void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig);
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
 
 void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out);
