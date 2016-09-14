@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   cameraControl.rcamDeInit = false;
 
   cameraControl.previewDisplayed = true;
-  cameraControl.previewchanged = false;
+  cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
 
@@ -106,6 +106,8 @@ int main(int argc, char *argv[])
   cameraControl.takePhoto = true;
   pthread_mutex_unlock(&cameraControl.mutexPtr);  
 
+  //usleep(500);
+  
   pthread_mutex_lock(&cameraControl.mutexPtr);  
   cameraControl.rcamDeInit = true;
   pthread_mutex_unlock(&cameraControl.mutexPtr);  

@@ -66,13 +66,13 @@ struct cameraControl
   pthread_mutex_t mutexPtr;
   bool rcamDeInit;
   //preview
+  bool previewChanged;
   bool previewDisplayed;
-  bool previewchanged;
   int previewWidth;
   int previewHeight;
   //photo
-  bool takePhoto;
   bool photoChanged;
+  bool takePhoto;
   int photoHeight;
   int photoWidth;
   //display (renderer)

@@ -150,21 +150,38 @@ void *initLocalCamera(void *VoidPtrArgs)
   
   while(1)
     {
-      pthread_mutex_lock(&currentArgs->mutexPtr);  
-      if (currentArgs->rcamDeInit == true)
+      pthread_mutex_lock(&currentArgs->mutexPtr);
+      if (currentArgs->previewChanged == true)
 	{
-	  printf("end\n");
-	  pthread_mutex_unlock(&currentArgs->mutexPtr);
-	  break;
+	  setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight);
+	  currentArgs->previewChanged = false;
+	}
+      else if (currentArgs->photoChanged == true)
+	{
+	  setCaptureRes(camera, currentArgs->photoWidth, currentArgs->photoHeight);
+	  currentArgs->photoChanged = false;
+	}
+      else if (currentArgs->displayChanged == true)
+	{
+	  setRenderConfig(video_render, currentArgs->displayType);
+	  currentArgs->displayChanged = false;
 	}
       else if (currentArgs->takePhoto == true)
 	{
 	  savePhoto(camera, image_encode, file_out1);
 	  currentArgs->takePhoto = false;
 	}
+      //loop termination
+      else if (currentArgs->rcamDeInit == true)
+	{
+	  printf("end\n");
+	  pthread_mutex_unlock(&currentArgs->mutexPtr);
+	  break;
+	}
+
       pthread_mutex_unlock(&currentArgs->mutexPtr);
       //try below to avoid busy wait
-      //usleep(500);
+      usleep(500);
     }
   
   ///////////////
