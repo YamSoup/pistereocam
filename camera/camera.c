@@ -97,20 +97,18 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  sleep(1);
+  sleep(2);
   //////////////////////////////////////////////////////
   //       !!!!!!!!!!!!
   //need functions to change the structure like remote.c
+  takePhoto(&cameraControl);
+  changePreviewRes(&cameraControl, 240, 240);
+  changeDisplayType(&cameraControl, DISPLAY_SIDEBYSIDE_LEFT);
+  changeCaptureRes(&cameraControl, 320, 240);
+  sleep(2);
+ 
   
-  pthread_mutex_lock(&cameraControl.mutexPtr);
-  cameraControl.takePhoto = true;
-  pthread_mutex_unlock(&cameraControl.mutexPtr);  
-
-  //usleep(500);
-  
-  pthread_mutex_lock(&cameraControl.mutexPtr);  
-  cameraControl.rcamDeInit = true;
-  pthread_mutex_unlock(&cameraControl.mutexPtr);  
+  deInit(&cameraControl);
   
   // wait for the thread to complete
   pthread_join(threadid, NULL);

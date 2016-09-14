@@ -65,6 +65,7 @@ struct cameraControl
   ILCLIENT_T *client;
   pthread_mutex_t mutexPtr;
   bool rcamDeInit;
+  bool takePhoto;
   //preview
   bool previewChanged;
   bool previewDisplayed;
@@ -72,7 +73,6 @@ struct cameraControl
   int previewHeight;
   //photo
   bool photoChanged;
-  bool takePhoto;
   int photoHeight;
   int photoWidth;
   //display (renderer)
@@ -91,7 +91,6 @@ int testFunction(ILCLIENT_T *client);
 
 void *initLocalCamera(void *VoidPtrArgs);
 void *initServerRcam(void *VoidPtrArgs);
-void deInitServerRcam(struct cameraControl *toChange);
 
 // functions that were originally in camera.c
 struct screenSizeStruct returnScreenSize(void);
@@ -102,5 +101,14 @@ void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenCo
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
 
 void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out);
+
+//functions that manipulate the cameraControl struct that ultimatly controls the camera
+void deInit(struct cameraControl *toChange);
+void takePhoto(struct cameraControl *toChange);
+void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight);
+void changeCaptureRes(struct cameraControl *toChange, int newWidth, int newHeight);
+void changeDisplayType(struct cameraControl *toChange, enum displayTypes newDisplayType);
+
+
 
 #endif // _RCAM_H

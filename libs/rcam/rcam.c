@@ -448,13 +448,6 @@ void *initServerRcam(void *VoidPtrArgs)
   pthread_exit(NULL);
 }
 
-void deInitServerRcam(struct cameraControl *toChange)
-{
-  pthread_mutex_lock(&toChange->mutexPtr);
-  toChange->rcamDeInit = 1;
-  pthread_mutex_unlock(&toChange->mutexPtr);
-}
-
 /////////////////////////////////////////////////////////
 // Functions that were originally in camera.c
 /////////////////////////////////////////////////////////
@@ -799,6 +792,53 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
     }  
   
   printf("captureSaved\n");
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+//functions that manipulate the cameraControl struct that ultimatly controls the camera
+///////////////////////////////////////////////////////////////////////////////////////
+
+//stops the camera loop NEEDS A COROSPONDING pthread_join()
+//might be worth trying to include the thread id in the cameraControlStruct
+void deInit(struct cameraControl *toChange)
+{
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->rcamDeInit = true;
+  pthread_mutex_unlock(&toChange->mutexPtr);
+  //pthread_join(toChange->threadid, NULL); THIS WILL ONLY WORK IF THREADID IS INCLUDED IN STRUCT
+}
+void takePhoto(struct cameraControl *toChange)
+{
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->takePhoto = true;
+  pthread_mutex_unlock(&toChange->mutexPtr);
+}
+void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight)
+{
+  //modify to check for allowed resolutions
+  //and then select the closet sane option
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->previewChanged = true;
+  toChange->previewWidth = newWidth;
+  toChange->previewHeight = newHeight;
+  pthread_mutex_unlock(&toChange->mutexPtr);
+}
+void changeCaptureRes(struct cameraControl *toChange, int newWidth, int newHeight)
+{
+  //modify to check for allowed resolutions
+  //and then select the closet sane option
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->photoChanged = true;
+  toChange->photoWidth = newWidth;
+  toChange->photoHeight = newHeight;
+  pthread_mutex_unlock(&toChange->mutexPtr);  
+}
+void changeDisplayType(struct cameraControl *toChange, enum displayTypes newDisplayType)
+{
+  pthread_mutex_lock(&toChange->mutexPtr);
+  toChange->displayChanged = true;
+  toChange->displayType = newDisplayType;
+  pthread_mutex_unlock(&toChange->mutexPtr);
 }
 
 
