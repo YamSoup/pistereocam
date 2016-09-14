@@ -25,7 +25,10 @@ void *initLocalCamera(void *VoidPtrArgs)
   pthread_mutex_lock(&currentArgs->mutexPtr);  
   ILCLIENT_T *client = currentArgs->client;
   pthread_mutex_unlock(&currentArgs->mutexPtr);
-  
+
+  //////////////////
+  //VARIABLES 
+ 
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   OMX_ERRORTYPE OMXstatus;
 
@@ -36,19 +39,15 @@ void *initLocalCamera(void *VoidPtrArgs)
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
   memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));  
     
-  /////////////////////////////////////////////////////////////////
+  //////////////////
   // STARTUP
-  /////////////////////////////////////////////////////////////////
 
-  /////////////////////////////////////////////////////////////////
-  //
+  //////////////////
   // Initalize Components
-  //
-  /////////////////////////////////////////////////////////////////
   
-  ///////////////////////////////////////////
-  ////initialise camera////
-  ///////////////////////////////////////////
+  //////////////////
+  ////initialise camera
+
   ilclient_create_component(client,
 			    &camera,
 			    "camera",
@@ -67,9 +66,8 @@ void *initLocalCamera(void *VoidPtrArgs)
   //change the preview resolution
   setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight);
   
-  ///////////////////////////////////////////
-  ////Initialise video render////
-  ///////////////////////////////////////////
+  //////////////////
+  ////Initialise video render
 
   ilclient_create_component(client,
 			    &video_render,
@@ -86,9 +84,9 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   setRenderConfig(video_render, currentArgs->displayType);
 
-  ///////////////////////////////////////////
-  ////Initalise Image Encoder///
-  ///////////////////////////////////////////
+  ////////////////////
+  ////Initalise Image Encoder
+
   ilclient_create_component(client,
 			    &image_encode,
 			    "image_encode",
@@ -103,12 +101,11 @@ void *initLocalCamera(void *VoidPtrArgs)
       exit(EXIT_FAILURE);
     }
 
-  //image format Param set */
+  //image format Param set
   setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
    
-  /////////////////////////////////////////////////////////////////
-  // Main Meat
-  /////////////////////////////////////////////////////////////////
+  ////////////////////
+  // enable components and tunnels
 
   //setup tunnel of camera preview to renderer
   set_tunnel(&tunnel_camera_to_render, camera, 70, video_render, 90);
@@ -146,9 +143,8 @@ void *initLocalCamera(void *VoidPtrArgs)
       exit(EXIT_FAILURE);
     }
   
-  //////////////////////////////////////////////////////
+  /////////////////
   // Code that takes picture
-  //////////////////////////////////////////////////////
 
   //needs a lot of work!
   
@@ -167,20 +163,21 @@ void *initLocalCamera(void *VoidPtrArgs)
 	  currentArgs->takePhoto = false;
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
-      
+      //try below to avoid busy wait
+      //usleep(500);
     }
   
-  /////////////////////////////////////////////////////////////////
+  ///////////////
   //CLEANUP
-  /////////////////////////////////////////////////////////////////
 
   //close files
   fclose(file_out1);
   
   //Disable components
+
+  //call pthread_exit so caller can join
   pthread_exit(NULL);  
 
-  //check all components have been cleaned up  
 }
 
 

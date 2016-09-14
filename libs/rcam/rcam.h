@@ -78,7 +78,7 @@ struct cameraControl
   //display (renderer)
   bool displayChanged;
   enum displayTypes displayType;
-  //display size has been removed for a function
+  //display size has been removed replaced with a function
   /*
   future implementations may change things like brightness etc
    */
@@ -92,7 +92,6 @@ int testFunction(ILCLIENT_T *client);
 void *initLocalCamera(void *VoidPtrArgs);
 void *initServerRcam(void *VoidPtrArgs);
 void deInitServerRcam(struct cameraControl *toChange);
-
 
 // functions that were originally in camera.c
 struct screenSizeStruct returnScreenSize(void);
