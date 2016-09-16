@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
+  cameraControl.previewFramerate = 15;
 
   cameraControl.takePhoto = false;
   cameraControl.photoChanged = false;
@@ -97,15 +98,16 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  sleep(2);
+  sleep(5);
   //////////////////////////////////////////////////////
   //       !!!!!!!!!!!!
   //need functions to change the structure like remote.c
   takePhoto(&cameraControl);
-  changePreviewRes(&cameraControl, 240, 240);
-  changeDisplayType(&cameraControl, DISPLAY_SIDEBYSIDE_LEFT);
-  changeCaptureRes(&cameraControl, 320, 240);
-  sleep(2);
+  changePreviewRes(&cameraControl, 1920, 12, 15);
+  sleep(5);
+  //changeDisplayType(&cameraControl, DISPLAY_SIDEBYSIDE_LEFT);
+  changePreviewRes(&cameraControl, 640, 480, 30);
+  sleep(5);
  
   
   deInit(&cameraControl);

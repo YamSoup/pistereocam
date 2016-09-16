@@ -69,6 +69,7 @@ struct cameraControl
   //preview
   bool previewChanged;
   bool previewDisplayed;
+  int previewFramerate;
   int previewWidth;
   int previewHeight;
   //photo
@@ -96,7 +97,7 @@ void *initServerRcam(void *VoidPtrArgs);
 struct screenSizeStruct returnScreenSize(void);
 
 void setCaptureRes(COMPONENT_T *camera, int width, int height);
-void setPreviewRes(COMPONENT_T *camera, int width, int height);
+void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate);
 void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig);
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
 
@@ -105,7 +106,7 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out);
 //functions that manipulate the cameraControl struct that ultimatly controls the camera
 void deInit(struct cameraControl *toChange);
 void takePhoto(struct cameraControl *toChange);
-void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight);
+void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight, int newFramerate);
 void changeCaptureRes(struct cameraControl *toChange, int newWidth, int newHeight);
 void changeDisplayType(struct cameraControl *toChange, enum displayTypes newDisplayType);
 

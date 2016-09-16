@@ -64,7 +64,7 @@ void *initLocalCamera(void *VoidPtrArgs)
   setCaptureRes(camera, currentArgs->photoWidth, currentArgs->photoHeight);
 
   //change the preview resolution
-  setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight);
+  setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight, currentArgs->previewFramerate);
   
   //////////////////
   ////Initialise video render
@@ -153,7 +153,14 @@ void *initLocalCamera(void *VoidPtrArgs)
       pthread_mutex_lock(&currentArgs->mutexPtr);
       if (currentArgs->previewChanged == true)
 	{
-	  setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight);
+	  ilclient_disable_tunnel(&tunnel_camera_to_render);
+	  OMXstatus = ilclient_change_component_state(camera, OMX_StatePause);
+	  setPreviewRes(camera,
+			currentArgs->previewWidth,
+			currentArgs->previewHeight,
+			currentArgs->previewFramerate);
+	  OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
+  	  ilclient_enable_tunnel(&tunnel_camera_to_render);
 	  currentArgs->previewChanged = false;
 	}
       else if (currentArgs->photoChanged == true)
@@ -508,7 +515,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
 
 
 //sets the preview res of the camera
-void setPreviewRes(COMPONENT_T *camera, int width, int height)
+void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
 {
   //needs to check width and height to see if compatible with rpi
   printf("in setPreviewRes\n");
@@ -529,7 +536,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height)
   port_params.format.video.nFrameHeight = height;
   port_params.format.video.nStride = width;
   port_params.format.video.nSliceHeight = height;
-  port_params.format.video.xFramerate = 24 << 16;
+  port_params.format.video.xFramerate = framerate << 16;
   //set changes
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -813,14 +820,32 @@ void takePhoto(struct cameraControl *toChange)
   toChange->takePhoto = true;
   pthread_mutex_unlock(&toChange->mutexPtr);
 }
-void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight)
+void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight, int newFramerate)
 {
-  //modify to check for allowed resolutions
-  //and then select the closet sane option
+  //resolutions need to be multiples of 16
+  //the test is not garanteed to work
+  //high resolutions need lower frame rates
+  // possibly implement a round up sollution upto max
+  // round up - http://stackoverflow.com/questions/3407012/c-rounding-up-to-the-nearest-multiple-of-a-number
+  // also find the max buffer allowed and min/ max frame rate and do width x height x framerate
+
+  //currently if statement is not working :(
+  if((newWidth % 16 || newHeight % 16)
+     && !(newWidth > 2591)
+     && !(newWidth < 128)
+     && !(newHeight > 1944)
+     && !(newHeight < 128) )
+    {
+      printf("Error: Requested resolution not supported.\n"
+	     "Resolutions need to be multiples of 16\n"
+	     "no more than 2591x1944 and no less than 128x128\n");
+      return;
+    }
   pthread_mutex_lock(&toChange->mutexPtr);
   toChange->previewChanged = true;
   toChange->previewWidth = newWidth;
   toChange->previewHeight = newHeight;
+  toChange->previewFramerate = newFramerate;
   pthread_mutex_unlock(&toChange->mutexPtr);
 }
 void changeCaptureRes(struct cameraControl *toChange, int newWidth, int newHeight)
