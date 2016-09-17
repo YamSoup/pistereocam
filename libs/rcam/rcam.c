@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <string.h>
 
 #include "print_OMX.h"
 #include "socket_helper.h"
@@ -17,6 +18,25 @@ to be writen and tested in camera
 The task is to make a thread version of the existing camera.c
 next task will be to simplify the initServerRcam using the same functions
  */
+
+//untested
+int fileFindNext(char* filePrefix)
+{
+  char currentFileName[31];
+  int count = 0;
+  char countString[6];
+  bool loop = true;
+  while(loop)
+    {
+      sprintf(countString, "%05d\n", count);
+      strcpy(currentFileName, filePrefix);
+      strcat(currentFileName, countString);
+      if( access(currentFileName, F_OK) != -1)
+	{count++; continue;}
+      else
+	return count;
+    }
+}
 
 void *initLocalCamera(void *VoidPtrArgs)
 {
@@ -145,8 +165,6 @@ void *initLocalCamera(void *VoidPtrArgs)
   
   /////////////////
   // Code that takes picture
-
-  //needs a lot of work!
   
   while(1)
     {
@@ -165,7 +183,9 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->photoChanged == true)
 	{
+	  ilclient_disable_tunnel(&tunnel_camera_to_encode);
 	  setCaptureRes(camera, currentArgs->photoWidth, currentArgs->photoHeight);
+  	  ilclient_enable_tunnel(&tunnel_camera_to_encode);
 	  currentArgs->photoChanged = false;
 	}
       else if (currentArgs->displayChanged == true)
@@ -188,7 +208,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 
       pthread_mutex_unlock(&currentArgs->mutexPtr);
       //try below to avoid busy wait
-      usleep(500);
+      //usleep(500);
     }
   
   ///////////////
@@ -462,10 +482,21 @@ void *initServerRcam(void *VoidPtrArgs)
 //function returns screensize seperated only to make porting easier
 struct screenSizeStruct returnScreenSize(void)
 {
-  struct screenSizeStruct CurrentScreenSize;
+  //currently very broken
+  struct screenSizeStruct currentScreenSize;
+  uint32_t currentScreenWidth = 0;
+  uint32_t currentScreenHeight = 0;
+  
   //super special broadcom only function
-  graphics_get_display_size(0/*framebuffer 0*/, &CurrentScreenSize.width, &CurrentScreenSize.height);
-  return CurrentScreenSize;
+  graphics_get_display_size(0/*framebuffer 0*/, &currentScreenWidth, &currentScreenHeight);
+  currentScreenSize.width = (int)currentScreenWidth;
+  currentScreenSize.height = (int)currentScreenHeight;
+
+  printf("in returnScreenSize:\n");
+  printf("width = %d\n", currentScreenSize.width);
+  printf("height = %d\n", currentScreenSize.height);
+  
+  return currentScreenSize;
 }    
 
 //sets the capture resolution of the camera (any camera)
@@ -542,7 +573,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
 
-  /*
+  
   //print current config
   memset(&port_params, 0, sizeof(port_params));
   port_params.nVersion.nVersion = OMX_VERSION;
@@ -554,7 +585,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
     printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
 
   print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);      
-  */
+  
 }
 
 // sets the preview size and position
@@ -822,25 +853,25 @@ void takePhoto(struct cameraControl *toChange)
 }
 void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeight, int newFramerate)
 {
-  //resolutions need to be multiples of 16
-  //the test is not garanteed to work
-  //high resolutions need lower frame rates
-  // possibly implement a round up sollution upto max
-  // round up - http://stackoverflow.com/questions/3407012/c-rounding-up-to-the-nearest-multiple-of-a-number
-  // also find the max buffer allowed and min/ max frame rate and do width x height x framerate
+  // these checks will do for now
+  // resolutions need to be multiples of 32 (confirmed after much testing)
+  int remainder = 0;
+  remainder = newWidth % 16;
+  if (remainder != 0)
+    newWidth = newWidth - remainder;
+  remainder = newHeight % 16;
+  if (remainder != 0)
+    newHeight = newHeight - remainder;
 
-  //currently if statement is not working :(
-  if((newWidth % 16 || newHeight % 16)
-     && !(newWidth > 2591)
-     && !(newWidth < 128)
-     && !(newHeight > 1944)
-     && !(newHeight < 128) )
+  // check if to large for buffer
+  // buffer limit appears to be 2995200 doesn't appear to be effected by framerate?
+  // bellow calc does not 
+  while ((long)newWidth * (long)newHeight > 2000000 )
     {
-      printf("Error: Requested resolution not supported.\n"
-	     "Resolutions need to be multiples of 16\n"
-	     "no more than 2591x1944 and no less than 128x128\n");
+      printf("resolution to large for buffer");
       return;
     }
+  
   pthread_mutex_lock(&toChange->mutexPtr);
   toChange->previewChanged = true;
   toChange->previewWidth = newWidth;

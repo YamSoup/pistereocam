@@ -40,8 +40,6 @@ int main(int argc, char *argv[])
 
   ILCLIENT_T *client;
   OMX_ERRORTYPE OMXstatus;
-  struct screenSizeStruct screenSize;
-  screenSize = returnScreenSize();
   
   //initialise bcm_host
   bcm_host_init();
@@ -68,6 +66,9 @@ int main(int argc, char *argv[])
 			      error_callback,
 			      NULL);
 
+  struct screenSizeStruct screenSize;
+  screenSize = returnScreenSize();
+
   
   struct cameraControl cameraControl;
   //possibly make a function in rcam to give default values
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
-  cameraControl.previewFramerate = 15;
+  cameraControl.previewFramerate = 30;
 
   cameraControl.takePhoto = false;
   cameraControl.photoChanged = false;
@@ -102,13 +103,13 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////
   //       !!!!!!!!!!!!
   //need functions to change the structure like remote.c
+  printf("in main\n");
+  printf("screen width = %d\nscreen height = %d\n", screenSize.width, screenSize.height);
+  changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
+  sleep(5);
+  
+  changeCaptureRes(&cameraControl, 640, 480);
   takePhoto(&cameraControl);
-  changePreviewRes(&cameraControl, 1920, 12, 15);
-  sleep(5);
-  //changeDisplayType(&cameraControl, DISPLAY_SIDEBYSIDE_LEFT);
-  changePreviewRes(&cameraControl, 640, 480, 30);
-  sleep(5);
- 
   
   deInit(&cameraControl);
   
