@@ -20,11 +20,11 @@ MY_LIBS =
 
 LDFLAGS =  $(DMX_LIBS) $(EGL_LIBS) $(OMX_LIBS) $(OMX_ILCLIENT_LIBS) $(MY_LIBS)
 
-remote_cam : remote_cam.o
-	cc -o remote_cam remote_cam.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o
+rcam_remote_slave : rcam_remote_slave.o
+	cc -o rcam_remote_slave rcam_remote_slave.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o
 
-remote_cam.o : remote_cam.c
-	cc -c remote_cam.c $(CFLAGS)
+rcam_remote_slave.o : rcam_remote_slave.c
+	cc -c rcam_remote_slave.c $(CFLAGS)
 
 clean :
-	rm remote_cam remote_cam.o
+	rm rcam_remote_slave rcam_remote_slave.o
