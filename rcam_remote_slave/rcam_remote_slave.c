@@ -51,11 +51,7 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 // FUNCTION PROTOTYPES
 ////////////////////////////////////////////////////////////////
 
-void setCaptureRes(COMPONENT_T *camera, int width, int height);
-void setPreviewRes(COMPONENT_T *camera, int width, int height);
-
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
-
 
 // MAIN
 int main(int argc, char *argv[])
@@ -118,7 +114,7 @@ int main(int argc, char *argv[])
     //set the capture resolution
     setCaptureRes(camera, 2592, 1944);
     //set default preview resolution
-    setPreviewRes(camera, 320, 240);
+    setPreviewRes(camera, 320, 240, 15);
 
     //assign the buffers
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
@@ -227,68 +223,6 @@ int main(int argc, char *argv[])
 /////////////////////////////////////////////////////////
 
 
-//set capture res
-void setCaptureRes(COMPONENT_T *camera, int width, int height)
-{
-  OMX_PARAM_PORTDEFINITIONTYPE port_params;
-  OMX_ERRORTYPE OMXstatus;
-
-  memset(&port_params, 0, sizeof(port_params));
-  port_params.nVersion.nVersion = OMX_VERSION;
-  port_params.nSize = sizeof(port_params);
-  port_params.nPortIndex = 72;
-
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-  //change needed params
-  port_params.format.image.nFrameWidth = width;
-  port_params.format.image.nFrameHeight = height;
-  port_params.format.image.nStride = 0; //needed! set to 0 to recalculate
-  port_params.format.image.nSliceHeight = 0;  //notneeded?
-  //set changes
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Setting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
-
-}
-
-//set preview res
-void setPreviewRes(COMPONENT_T *camera, int width, int height)
-{
-    //needs to check width and height to see if compatible with rpi
-
-    OMX_PARAM_PORTDEFINITIONTYPE port_params;
-    OMX_ERRORTYPE OMXstatus;
-
-    memset(&port_params, 0, sizeof(port_params));
-    port_params.nVersion.nVersion = OMX_VERSION;
-    port_params.nSize = sizeof(port_params);
-    port_params.nPortIndex = 70;
-    //prepopulate structure
-    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    //change needed params
-    port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
-    port_params.format.video.nFrameWidth = width;
-    port_params.format.video.nFrameHeight = height;
-    port_params.format.video.nStride = width;
-    port_params.format.video.nSliceHeight = height;
-    port_params.format.video.xFramerate = 24 << 16;
-    //set changes
-    OMXstatus = OMX_SetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    
-    //print current config
-    OMXstatus = OMX_GetConfig(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
-    if (OMXstatus != OMX_ErrorNone)
-        printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
-    print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
-
-
-}
 
 //error callback for OMX
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data)

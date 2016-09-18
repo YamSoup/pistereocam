@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
   cameraControl.rcamDeInit = false;
 
   cameraControl.previewDisplayed = true;
-  cameraControl.previewchanged = false;
+  cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
 
@@ -281,8 +281,6 @@ int main(int argc, char *argv[])
 
   cameraControl.displayChanged = false;
   cameraControl.displayType = 1;
-  cameraControl.screenWidth = screen_width;
-  cameraControl.screenHeight = screen_height;
 
   pthread_t threadid;
   int rc;
@@ -296,7 +294,7 @@ int main(int argc, char *argv[])
   
   //sleep for 2 secs
   sleep(10);
-  deInitServerRcam(&cameraControl);
+  deInit(&cameraControl);
   pthread_join(threadid, NULL);
 
   /////////////////////////////////////////////////////////////////
