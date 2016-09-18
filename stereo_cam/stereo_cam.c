@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
   cameraControl.photoHeight = 1944; //max settings
 
   cameraControl.displayChanged = false;
-  cameraControl.displayType = 1;
+  cameraControl.displayType = DISPLAY_SIDEBYSIDE_RIGHT;
 
   pthread_t threadid;
   int rc;

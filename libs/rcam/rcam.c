@@ -57,8 +57,8 @@ void *initLocalCamera(void *VoidPtrArgs)
   
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
-  memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));  
-    
+  memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
+  
   //////////////////
   // STARTUP
 
@@ -263,9 +263,6 @@ void *initServerRcam(void *VoidPtrArgs)
 
   OMX_BUFFERHEADERTYPE *client_video_render_in;
 
-  int numbytes;
-  char char_buffer[12];
-
   OMX_PARAM_PORTDEFINITIONTYPE render_params;
   memset(&render_params, 0, sizeof(render_params));
   render_params.nVersion.nVersion = OMX_VERSION;
@@ -277,6 +274,9 @@ void *initServerRcam(void *VoidPtrArgs)
   render_config.nVersion.nVersion = OMX_VERSION;
   render_config.nSize = sizeof(render_config);
   render_config.nPortIndex = 90;
+  
+  int numbytes;
+  char char_buffer[12];
 
   enum rcam_command rcam_command = NO_COMMAND;
 
@@ -288,14 +288,9 @@ void *initServerRcam(void *VoidPtrArgs)
   int socket_fd = 0, client_socket_fd = 0;
   
   socket_fd = getAndBindTCPServerSocket(PORT);
-  
   printf("waiting for remotecam to connect\n");
-
   client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
 
-  printf("socket_fd = %d\n", socket_fd);
-  printf("client_socket_fd = %d\n", client_socket_fd);
-  
   ///////////////////////////////////////////
   ////Initialise client video render
 
@@ -315,7 +310,7 @@ void *initServerRcam(void *VoidPtrArgs)
     }
 
   //set the port params to the same as remoteCam.c
-
+  
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting video render port parameters (1)");
@@ -331,7 +326,6 @@ void *initServerRcam(void *VoidPtrArgs)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
 
-  pthread_mutex_unlock(&currentArgs->mutexPtr);
   
   //check the port params
   memset(&render_params, 0, sizeof(render_params));
@@ -344,18 +338,17 @@ void *initServerRcam(void *VoidPtrArgs)
     printf("Error Getting video render port parameters (1)");
 
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
-
+  
+  
   //set the position on the screen
   setRenderConfig(client_video_render, currentArgs->displayType);  
   
   //ask ilclient to allocate buffers for client_video_render
-  pthread_mutex_lock(&currentArgs->mutexPtr);  
-
+  
   printf("enable client_video_render_input port\n");
   ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
   ilclient_enable_port(client_video_render, 90);
 
-  pthread_mutex_unlock(&currentArgs->mutexPtr);  
   /*
   DOES NOT WORK LEAVING AS A REMINDER
 
@@ -372,7 +365,6 @@ void *initServerRcam(void *VoidPtrArgs)
   */
 
   //change preview render to executing
-  pthread_mutex_lock(&currentArgs->mutexPtr);
   OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
     {
