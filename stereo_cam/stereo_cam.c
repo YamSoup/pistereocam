@@ -144,120 +144,34 @@ int main(int argc, char *argv[])
   ////Local Camera
   ///////////////////////////////////////////
 
-  ///////////////////////////////////
-  //initalize local camera component
-  ilclient_create_component(client,
-			    &local_camera,
-			    "camera",
-			    ILCLIENT_DISABLE_ALL_PORTS);
+  struct cameraControl localCameraControl;
+  localCameraControl.client = client;
+  pthread_mutex_init(&localCameraControl.mutexPtr, NULL);
+  localCameraControl.rcamDeInit = false;
 
-  OMXstatus = ilclient_change_component_state(local_camera, OMX_StateIdle);
-  if (OMXstatus != OMX_ErrorNone)
+  localCameraControl.takePhoto = false;
+  localCameraControl.previewDisplayed = true;
+  
+  localCameraControl.previewChanged = false;
+  localCameraControl.previewWidth = 320;
+  localCameraControl.previewHeight = 240;
+
+  localCameraControl.photoChanged = false;
+  localCameraControl.photoWidth = 2591;
+  localCameraControl.photoHeight = 1944;
+
+  localCameraControl.displayChanged = false;
+  localCameraControl.displayType = DISPLAY_SIDEBYSIDE_LEFT;
+
+  pthread_t localCamThreadID;
+  int result;
+
+  result = pthread_create(&localCamThreadID, NULL, initLocalCamera, (void *)&localCameraControl);
+  if(result)
     {
-      fprintf(stderr, "unable to move local_camera to Idle (1)");
+      printf("ERROR creating local camera thread, error = %d\n");
       exit(EXIT_FAILURE);
     }
-
-  //change the preview resolution of local_camera using structure local_port_params
-  OMXstatus = OMX_GetParameter(ilclient_get_handle(local_camera),
-			       OMX_IndexParamPortDefinition,
-			       &local_port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Error Getting paramater for local_port_params (1) Error = %s\n",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-
-  local_port_params.format.video.nFrameWidth = 320;
-  local_port_params.format.video.nFrameHeight = 240;
-  local_port_params.format.video.nStride = 0;
-  local_port_params.format.video.nSliceHeight = 0;
-  local_port_params.format.video.nBitrate = 0;
-  local_port_params.format.video.xFramerate = 0;
-
-  OMXstatus = OMX_SetParameter(ilclient_get_handle(local_camera),
-			       OMX_IndexParamPortDefinition,
-			       &local_port_params);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Error Setting parameter for local_port_params (1) Error = %s\n",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-
-  ///////////////////////////////////
-  //initalize local_video_render
-  ilclient_create_component(client,
-			    &local_video_render,
-			    "video_render",
-			    ILCLIENT_DISABLE_ALL_PORTS);
-
-  OMXstatus = ilclient_change_component_state(local_video_render, OMX_StateIdle);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Unable to move local_video_render to Idle (1) Error = %s\n",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-
-  //set the position and size of display using local_render_config
-  local_render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
-						 |OMX_DISPLAY_SET_FULLSCREEN
-						 |OMX_DISPLAY_SET_NOASPECT
-						 |OMX_DISPLAY_SET_MODE);
-  local_render_config.fullscreen = OMX_FALSE;
-  local_render_config.noaspect = OMX_FALSE;
-
-  local_render_config.dest_rect.width = screen_width/2;
-  local_render_config.dest_rect.height = screen_height;
-
-  local_render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
-
-  OMXstatus = OMX_SetConfig(ilclient_get_handle(local_video_render),
-			    OMX_IndexConfigDisplayRegion,
-			    &local_render_config);
-
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Unable to set the local_render display with local_render_config, Error = %s",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-
-  //setup the tunnel for the local camera
-
-  set_tunnel(&tunnel_local_cam_to_local_video_render,
-	     local_camera, 70,
-	     local_video_render, 90);
-  ilclient_setup_tunnel(&tunnel_local_cam_to_local_video_render, 0, 0);
-
-  //change components to execution
-
-  OMXstatus = ilclient_change_component_state(local_camera, OMX_StateExecuting);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Unable to move local_camera to state executing (1), Error = %s",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(local_camera));
-
-  OMXstatus = ilclient_change_component_state(local_video_render, OMX_StateExecuting);
-  if (OMXstatus != OMX_ErrorNone)
-    {
-      fprintf(stderr,
-	      "Unable to move local_video_render to state executing (1), Error = %s",
-	      err2str(OMXstatus));
-      exit(EXIT_FAILURE);
-    }
-  printState(ilclient_get_handle(local_video_render));
-
   
   /////////////////////////////////////////////////////////////////
   // rcam :)
@@ -269,12 +183,14 @@ int main(int argc, char *argv[])
   pthread_mutex_init(&cameraControl.mutexPtr, NULL);
   cameraControl.rcamDeInit = false;
 
-  cameraControl.previewDisplayed = true;
+  cameraControl.takePhoto = false;
+  cameraControl.previewDisplayed = true;  
+
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
 
-  cameraControl.takePhoto = false;
+
   cameraControl.photoChanged = false;
   cameraControl.photoWidth = 2591; //max settings
   cameraControl.photoHeight = 1944; //max settings
@@ -282,20 +198,22 @@ int main(int argc, char *argv[])
   cameraControl.displayChanged = false;
   cameraControl.displayType = DISPLAY_SIDEBYSIDE_RIGHT;
 
-  pthread_t threadid;
-  int rc;
-  rc = pthread_create(&threadid, NULL, initServerRcam, (void *)&cameraControl);
-  if(rc)
+  pthread_t RcamThreadid;
+
+  result = pthread_create(&RcamThreadid, NULL, initServerRcam, (void *)&cameraControl);
+  if(result)
     {
-      printf("ERROR creating rcam thread, error = %d\n", rc);
+      printf("ERROR creating rcam thread, error = %d\n", result);
       exit(EXIT_FAILURE);
     }
   
   
   //sleep for 2 secs
   sleep(10);
+  deInit(&localCameraControl);
   deInit(&cameraControl);
-  pthread_join(threadid, NULL);
+  pthread_join(localCamThreadID, NULL);
+  pthread_join(RcamThreadid, NULL);
 
   /////////////////////////////////////////////////////////////////
   //CLEANUP
