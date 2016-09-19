@@ -310,6 +310,8 @@ void *initServerRcam(void *VoidPtrArgs)
     }
 
   //set the port params to the same as remoteCam.c
+  // !!!
+  // needs the checks that the local camera does 
   
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -320,14 +322,14 @@ void *initServerRcam(void *VoidPtrArgs)
   render_params.format.video.nFrameHeight = currentArgs->previewHeight;
   render_params.format.video.nStride = currentArgs->previewWidth;
   render_params.format.video.nSliceHeight = currentArgs->previewHeight;
-  render_params.format.video.xFramerate = 24 << 16;
+  render_params.format.video.xFramerate = currentArgs->previewFramerate << 16;
 
   OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
 
   
-  //check the port params
+  //check(print) the port params
   memset(&render_params, 0, sizeof(render_params));
   render_params.nVersion.nVersion = OMX_VERSION;
   render_params.nSize = sizeof(render_params);
@@ -348,21 +350,6 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("enable client_video_render_input port\n");
   ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
   ilclient_enable_port(client_video_render, 90);
-
-  /*
-  DOES NOT WORK LEAVING AS A REMINDER
-
-  memset(&render_config, 0, sizeof(render_config));
-  render_config.nVersion.nVersion = OMX_VERSION;
-  render_config.nSize = sizeof(render_config);
-  render_config.nPortIndex = 90;
-  render_config.set = OMX_DISPLAY_SET_DUMMY;
-
-  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexConfigDisplayRegion, &render_config);
-  if(OMXstatus != OMX_ErrorNone)
-    printf("Error Getting Config. Error = %s\n", err2str(OMXstatus));
-  print_OMX_CONFIG_DISPLAYREGIONTYPE(render_config);
-  */
 
   //change preview render to executing
   OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateExecuting);
@@ -459,7 +446,7 @@ void *initServerRcam(void *VoidPtrArgs)
    
   //free buffer memory
   free(temp_buffer);
-  printf("temp_buffer memory freed");
+  printf("temp_buffer memory free");
   //!free ilobjects and make sure all allocated memory is free!
 
   //!free sockets try to ensure no zombies
@@ -472,6 +459,7 @@ void *initServerRcam(void *VoidPtrArgs)
 /////////////////////////////////////////////////////////
 
 //function returns screensize seperated only to make porting easier
+//NOTE: super special function only works after bcm_host_init() and possibly others
 struct screenSizeStruct returnScreenSize(void)
 {
   //currently very broken
@@ -484,10 +472,6 @@ struct screenSizeStruct returnScreenSize(void)
   currentScreenSize.width = (int)currentScreenWidth;
   currentScreenSize.height = (int)currentScreenHeight;
 
-  printf("in returnScreenSize:\n");
-  printf("width = %d\n", currentScreenSize.width);
-  printf("height = %d\n", currentScreenSize.height);
-  
   return currentScreenSize;
 }    
 
