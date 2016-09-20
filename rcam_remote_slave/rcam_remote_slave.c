@@ -62,9 +62,15 @@ int main(int argc, char *argv[])
     bool deliver_preview = false;
 
     ILCLIENT_T *client;
-    COMPONENT_T *camera;
+    COMPONENT_T *camera = NULL, *image_encode = NULL;
     OMX_ERRORTYPE OMXstatus;
 
+    FILE *file_out;
+    file_out = fopen("rcam1", "wb");
+
+    TUNNEL_T tunnel_camera_to_encode;
+    memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
+    
     OMX_BUFFERHEADERTYPE *previewHeader;
 
     //INITIALIZE CAMERA STUFF
@@ -94,7 +100,7 @@ int main(int argc, char *argv[])
                                 error_callback,
                                 NULL);
 
-    
+    ////////////////////////////
     //initialize camera
     ilclient_create_component(client,
                               &camera,
@@ -111,6 +117,7 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
+    //defaults
     //set the capture resolution
     setCaptureRes(camera, 2592, 1944);
     //set default preview resolution
@@ -130,6 +137,46 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
+    ////////////////////////
+    ////Initialize Image Encoder
+
+    ilclient_create_component(client,
+			      &image_encode,
+			      "image_encode",
+			      ILCLIENT_DISABLE_ALL_PORTS
+			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
+
+    OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
+    if (OMXstatus != OMX_ErrorNone)
+      {
+	fprintf(stderr, "unable to move image encode component to Idle (1)\n");
+	exit(EXIT_FAILURE);
+      }
+
+    //image format Param set
+    setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
+    
+    ////////////////////////
+    ////enable tunnel and image encode
+
+    ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
+    ilclient_enable_port(image_encode, 341);
+    
+    set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
+    ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
+    
+    //change image_encode to executing
+    OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
+    if (OMXstatus != OMX_ErrorNone)
+      {
+	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
+	exit(EXIT_FAILURE);
+      }
+    
+
+    
+    
+    ////////////////////////////////
     //Loop until connected to server program
     while(1)
       {
@@ -146,9 +193,8 @@ int main(int argc, char *argv[])
 	  }
       }
 
-    ////////////////////////////////////////////////////////////
+    /////////////////////////////////
     // SEND AND RECV
-    ////////////////////////////////////////////////////////////
 
     char handshake_r[4];
     long int num_bytes = 0;
@@ -221,8 +267,6 @@ int main(int argc, char *argv[])
 /////////////////////////////////////////////////////////
 // FUNCTIONS
 /////////////////////////////////////////////////////////
-
-
 
 //error callback for OMX
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data)
