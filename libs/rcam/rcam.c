@@ -28,7 +28,7 @@ int fileFindNext(char* filePrefix)
   bool loop = true;
   while(loop)
     {
-      sprintf(countString, "%05d\n", count);
+      sprintf(countString, "_%05d\n", count);
       strcpy(currentFileName, filePrefix);
       strcat(currentFileName, countString);
       if( access(currentFileName, F_OK) != -1)
@@ -311,7 +311,8 @@ void *initServerRcam(void *VoidPtrArgs)
 
   //set the port params to the same as remoteCam.c
   // !!!
-  // needs the checks that the local camera does 
+  // needs the checks that the local camera does
+  // to ensure sanity
   
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -373,34 +374,63 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("handshake result = %s", char_buffer);
   write(client_socket_fd, "got\0", sizeof(char)*4);
 
+  ////////////////////////////////////////////////////////////
+  //// Main Thread Loop
+  
   void * temp_buffer;
   temp_buffer = malloc(render_params.nBufferSize + 1 );
-
+  printf("*** nBufferSize = %d\n", render_params.nBufferSize);
+  
   long int num_bytes = 0;
+  
   enum rcam_command current_command = START_PREVIEW;
-
   printf("current_command = %d\n", current_command);
-
   printf("sending command ...");
   write(client_socket_fd, &current_command, sizeof(current_command));
   printf("sent command\n");
 
   current_command = NO_COMMAND;
 
-  printf("*** nBufferSize = %d\n", render_params.nBufferSize);
-
-  ////////////////////////////////////////////////////////////
-  //// Main Thread Loop
-
-  bool rcamLoopEsc = false;
-
   //modify to inifinate loop when control functions are writen
   while(1)
     {
-      //escape condition needs mutex so is not in while condition
       pthread_mutex_lock(&currentArgs->mutexPtr);
-      rcamLoopEsc = currentArgs->rcamDeInit;
-      pthread_mutex_unlock(&currentArgs->mutexPtr);  
+
+      if (currentArgs->previewChanged == true)
+	{
+	  //needs to:
+	  //change the renderer params this side!
+	  
+	  //change the preview on the remote side
+	  current_command = SET_PREVIEW_RES;
+	  //possibly abandon current command
+	  // and serialize the cameraControlStruct and sent that instead
+	  // see: http://stackoverflow.com/questions/1577161/passing-a-structure-through-sockets-in-c
+	}
+      else if (currentArgs->photoChanged == true)
+	{
+	  //needs to:
+	  //change the capture res on the remote side
+	}
+      else if (currentArgs->displayChanged == true)
+	{
+	  setRenderConfig(client_video_render, currentArgs->displayType);
+	  currentArgs->displayChanged = false;
+	}      
+      else if (currentArgs->takePhoto == true)
+	{
+	  //needs to:
+	  //prepare to recive the buffer this side
+	  //send command and then recive the capture
+	}
+      //loop termination
+      if(currentArgs->rcamDeInit)
+	{
+	  current_command = END_REMOTE_CAM;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
+  	  printf("END_REMOTE_CAM sent\n");
+	  break; //exits while loop
+	}
       
       printState(ilclient_get_handle(client_video_render));
       
@@ -427,15 +457,8 @@ void *initServerRcam(void *VoidPtrArgs)
       //empty buffer into render component
       OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
       printf("Emptied buffer\n");
-
       
-      if(rcamLoopEsc == true)
-	{
-	  current_command = END_REMOTE_CAM;
-	  write(client_socket_fd, &current_command, sizeof(current_command));
-  	  printf("END_REMOTE_CAM sent\n");
-	  break; //exits while loop
-	}
+      pthread_mutex_unlock(&currentArgs->mutexPtr);  
 
       //send no command
       write(client_socket_fd, &current_command, sizeof(current_command));
