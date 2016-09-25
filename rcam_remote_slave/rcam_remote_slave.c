@@ -241,10 +241,12 @@ int main(int argc, char *argv[])
 	  read(socket_fd, &previewFramerate, sizeof(previewFramerate));
 	  printf("framerate = %d\n", previewFramerate);
 	  //disable component and buffers
+	  /*
 	  ilclient_change_component_state(camera, OMX_StatePaused);
 	  ilclient_disable_port(camera, 70);
 	  ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
 	  printf("disabled\n");
+	  */
 	  //change the preview port
 	  setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 	  printf("after set\n");
