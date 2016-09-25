@@ -150,7 +150,6 @@ int main(int argc, char *argv[])
   localCameraControl.rcamDeInit = false;
 
   localCameraControl.takePhoto = false;
-  localCameraControl.previewDisplayed = true;
   
   localCameraControl.previewChanged = false;
   localCameraControl.previewWidth = 320;
@@ -184,7 +183,6 @@ int main(int argc, char *argv[])
   cameraControl.rcamDeInit = false;
 
   cameraControl.takePhoto = false;
-  cameraControl.previewDisplayed = true;  
 
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;

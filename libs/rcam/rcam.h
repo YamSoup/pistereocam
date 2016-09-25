@@ -19,9 +19,9 @@ enum rcam_command
 {
     NO_COMMAND = 0,
     SET_PREVIEW_RES = 10,
+    SET_CAPTURE_RES = 11,
     START_PREVIEW = 20,
-    STOP_PREVIEW = 21,
-    TAKE_PHOTO = 30,
+    TAKE_PHOTO = 90,
     END_REMOTE_CAM = 99
 };
 
@@ -65,9 +65,10 @@ struct cameraControl
   pthread_mutex_t mutexPtr;
   bool rcamDeInit;
   bool takePhoto;
+  // bool previewDisplayed;
+  
   //preview
   bool previewChanged;
-  bool previewDisplayed;
   int previewFramerate;
   int previewWidth;
   int previewHeight;

@@ -100,6 +100,49 @@ int main(int argc, char *argv[])
                                 error_callback,
                                 NULL);
 
+    ////////////////////////////////
+    //Loop until connected to server program
+    while(1)
+      {
+	socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
+	if (socket_fd < 0)
+	  {
+	    printf("socket failure\n");
+	    sleep(1);
+	  }
+	else
+	  {
+	    printf("socket success!, socket_fd = %d\n", socket_fd);
+	    break;
+	  }
+      }
+
+    /////////////////////////////////
+    // SEND AND RECV
+
+    char handshake_r[4];
+    long int num_bytes = 0;
+    int previewWidth, previewHeight, previewFramerate;
+    int captureWidth, captureHeight;
+
+    //handshake
+    printf("sending handshake\n");
+    write(socket_fd, "handshake\0", sizeof(char) * 11);
+    printf("handshake sent\n");
+    read(socket_fd, &handshake_r, sizeof(char)*4);
+    printf("handshake = %s\n\n", handshake_r);
+
+    read(socket_fd, &previewWidth, sizeof(previewWidth));
+    read(socket_fd, &previewHeight, sizeof(previewHeight));
+    read(socket_fd, &previewFramerate, sizeof(previewFramerate));
+    
+    read(socket_fd, &captureWidth, sizeof(captureWidth));
+    read(socket_fd, &captureHeight, sizeof(captureHeight));
+        
+    printf("rcam_remote_slave recived values:\n");
+    printf("preview %d x %d framerate %d\n", previewWidth, previewHeight, previewFramerate);
+    printf("capture %d c %d\n", captureWidth, captureHeight);
+    
     ////////////////////////////
     //initialize camera
     ilclient_create_component(client,
@@ -119,9 +162,9 @@ int main(int argc, char *argv[])
 
     //defaults
     //set the capture resolution
-    setCaptureRes(camera, 2592, 1944);
+    setCaptureRes(camera, captureWidth, captureHeight);
     //set default preview resolution
-    setPreviewRes(camera, 320, 240, 15);
+    setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 
     //assign the buffers
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
@@ -176,34 +219,6 @@ int main(int argc, char *argv[])
 
     
     
-    ////////////////////////////////
-    //Loop until connected to server program
-    while(1)
-      {
-	socket_fd = getAndConnectTCPSocket(IP_ADD, SERV_PORT);
-	if (socket_fd < 0)
-	  {
-	    printf("socket failure\n");
-	    sleep(1);
-	  }
-	else
-	  {
-	    printf("socket success!, socket_fd = %d\n", socket_fd);
-	    break;
-	  }
-      }
-
-    /////////////////////////////////
-    // SEND AND RECV
-
-    char handshake_r[4];
-    long int num_bytes = 0;
-    //handshake
-    printf("sending handshake\n");
-    write(socket_fd, "handshake\0", sizeof(char) * 11);
-    printf("handshake sent\n");
-    read(socket_fd, &handshake_r, sizeof(char)*4);
-    printf("handshake = %s\n\n", handshake_r);
 
     bool continueLoop = true;
     
@@ -221,7 +236,6 @@ int main(int argc, char *argv[])
 	{
 	case NO_COMMAND: break;
 	case START_PREVIEW: deliver_preview = true; break;
-	case STOP_PREVIEW: deliver_preview = false; break;
 	case END_REMOTE_CAM: continueLoop = false; break;
 	}
 

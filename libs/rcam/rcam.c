@@ -164,7 +164,7 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
   
   /////////////////
-  // Code that takes picture
+  // Main Loop
   
   while(1)
     {
@@ -269,14 +269,8 @@ void *initServerRcam(void *VoidPtrArgs)
   render_params.nSize = sizeof(render_params);
   render_params.nPortIndex = 90;
 
-  OMX_CONFIG_DISPLAYREGIONTYPE render_config;
-  memset(&render_config, 0, sizeof(render_config));
-  render_config.nVersion.nVersion = OMX_VERSION;
-  render_config.nSize = sizeof(render_config);
-  render_config.nPortIndex = 90;
-  
   int numbytes;
-  char char_buffer[12];
+
 
   enum rcam_command rcam_command = NO_COMMAND;
 
@@ -312,7 +306,7 @@ void *initServerRcam(void *VoidPtrArgs)
   //set the port params to the same as remoteCam.c
   // !!!
   // needs the checks that the local camera does
-  // to ensure sanity
+  // to ensure sanity (OR DOES IT ALREADY DO THIS ? IT MIGHT BE)
   
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -328,7 +322,6 @@ void *initServerRcam(void *VoidPtrArgs)
   OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
-
   
   //check(print) the port params
   memset(&render_params, 0, sizeof(render_params));
@@ -342,9 +335,6 @@ void *initServerRcam(void *VoidPtrArgs)
 
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
   
-  
-  //set the position on the screen
-  setRenderConfig(client_video_render, currentArgs->displayType);  
   
   //ask ilclient to allocate buffers for client_video_render
   
@@ -363,23 +353,42 @@ void *initServerRcam(void *VoidPtrArgs)
   printState(ilclient_get_handle(client_video_render));
   printf("***\n");
 
-  pthread_mutex_unlock(&currentArgs->mutexPtr);  
-
+  //set the position on the screen
+  setRenderConfig(client_video_render, currentArgs->displayType);  
+  
   ////////////////////////////////////////////////////////////
-  // SEND AND RECV
+  // INITIATE RCAM_REMOTE_SLAVE 
 
+  char char_buffer[12];
+  
   //handshake
   printf("waiting to recive handshake ... \n");
   read(client_socket_fd, char_buffer, 11);
   printf("handshake result = %s", char_buffer);
+  
   write(client_socket_fd, "got\0", sizeof(char)*4);
 
+  write(client_socket_fd, &currentArgs->previewWidth, sizeof(currentArgs->previewWidth));
+  write(client_socket_fd, &currentArgs->previewHeight, sizeof(currentArgs->previewHeight));
+  write(client_socket_fd, &currentArgs->previewFramerate, sizeof(currentArgs->previewFramerate));
+
+  write(client_socket_fd, &currentArgs->photoWidth, sizeof(currentArgs->photoWidth));
+  write(client_socket_fd, &currentArgs->photoHeight, sizeof(currentArgs->photoHeight));
+      
+
+  
+
+  pthread_mutex_unlock(&currentArgs->mutexPtr);  
+  
   ////////////////////////////////////////////////////////////
   //// Main Thread Loop
   
-  void * temp_buffer;
-  temp_buffer = malloc(render_params.nBufferSize + 1 );
-  printf("*** nBufferSize = %d\n", render_params.nBufferSize);
+  void * preview_buffer;
+  preview_buffer = malloc(render_params.nBufferSize + 1 );
+  printf("***preview nBufferSize = %d\n", render_params.nBufferSize);
+  int photo_buffer_size;
+  void * photo_buffer;
+  //photo_buffer = malloc();
   
   long int num_bytes = 0;
   
@@ -390,7 +399,12 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("sent command\n");
 
   current_command = NO_COMMAND;
+	  //possibly abandon current command
+	  // and serialize the cameraControlStruct and sent that instead
+	  // see: http://stackoverflow.com/questions/1577161/passing-a-structure-through-sockets-in-c
 
+
+  
   //modify to inifinate loop when control functions are writen
   while(1)
     {
@@ -399,32 +413,82 @@ void *initServerRcam(void *VoidPtrArgs)
       if (currentArgs->previewChanged == true)
 	{
 	  //needs to:
-	  //change the renderer params this side!
-	  
+	  //change the renderer params this side
+	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
+				    OMX_IndexParamPortDefinition,
+				    &render_params);
+	  if (OMXstatus != OMX_ErrorNone)
+	    printf("Error Getting video render port parameters (in loop)");
+
+	  render_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+	  render_params.format.video.nFrameWidth = currentArgs->previewWidth;
+	  render_params.format.video.nFrameHeight = currentArgs->previewHeight;
+	  render_params.format.video.nStride = currentArgs->previewWidth;
+	  render_params.format.video.nSliceHeight = currentArgs->previewHeight;
+	  render_params.format.video.xFramerate = currentArgs->previewFramerate << 16;
+
+	  OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render),
+				    OMX_IndexParamPortDefinition,
+				    &render_params);
+	  if (OMXstatus != OMX_ErrorNone)
+	    printf("Error Setting video render port parameters (in loop)");
+	  //resize the preview buffer
+	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
+				    OMX_IndexParamPortDefinition,
+				    &render_params);
+	  if (OMXstatus != OMX_ErrorNone)
+	    printf("Error Getting video render port parameters (in loop)");
+	  free(preview_buffer);
+	  preview_buffer = malloc(render_params.nBufferSize + 1);
 	  //change the preview on the remote side
 	  current_command = SET_PREVIEW_RES;
-	  //possibly abandon current command
-	  // and serialize the cameraControlStruct and sent that instead
-	  // see: http://stackoverflow.com/questions/1577161/passing-a-structure-through-sockets-in-c
+	  write(client_socket_fd, &current_command, sizeof(current_command));
+	  //send needed paramaters to rcam_remote_slave for the preview change
+	  write(client_socket_fd, &currentArgs->previewWidth, sizeof(currentArgs->previewWidth));
+	  write(client_socket_fd, &currentArgs->previewHeight, sizeof(currentArgs->previewHeight));
+	  write(client_socket_fd, &currentArgs->previewFramerate, sizeof(currentArgs->previewFramerate));
+	  //!!!
+	  //possibly wait for confirmation
+	  currentArgs->previewChanged = false;
+	  continue;
 	}
       else if (currentArgs->photoChanged == true)
 	{
 	  //needs to:
 	  //change the capture res on the remote side
+	  current_command = SET_CAPTURE_RES;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
+	  //send needed paramaters to rcam_remote_slave for the photo change
+	  write(client_socket_fd, &currentArgs->previewWidth, sizeof(currentArgs->previewWidth));
+	  write(client_socket_fd, &currentArgs->previewHeight, sizeof(currentArgs->previewHeight));
+	  //change the photo_buffer??
+	  read(client_socket_fd, &photo_buffer_size, sizeof(photo_buffer_size));
+	  free(photo_buffer);
+	  photo_buffer = malloc(photo_buffer_size + 1);
+	  //!!!
+	  //possibly wait for confirmation
+	  currentArgs->photoChanged = false;
+	  continue;
 	}
       else if (currentArgs->displayChanged == true)
 	{
 	  setRenderConfig(client_video_render, currentArgs->displayType);
 	  currentArgs->displayChanged = false;
+	  continue;
 	}      
       else if (currentArgs->takePhoto == true)
 	{
 	  //needs to:
-	  //prepare to recive the buffer this side
 	  //send command and then recive the capture
+	  current_command = TAKE_PHOTO;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
+	  read_all(client_socket_fd, &photo_buffer, photo_buffer_size);
+	  //save or do something with it?
+	  currentArgs->takePhoto = false;
+	  continue;
 	}
       //loop termination
-      if(currentArgs->rcamDeInit)
+      else if(currentArgs->rcamDeInit)
 	{
 	  current_command = END_REMOTE_CAM;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
@@ -432,25 +496,23 @@ void *initServerRcam(void *VoidPtrArgs)
 	  break; //exits while loop
 	}
       
-      printState(ilclient_get_handle(client_video_render));
-      
       printf("get a buffer to process\n");
       printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
       num_bytes = read(client_socket_fd,
-		       temp_buffer,
+		       preview_buffer,
 		       render_params.nBufferSize);
       while (num_bytes < render_params.nBufferSize)
 	{
 	  num_bytes += read(client_socket_fd,
-			    temp_buffer + num_bytes,
+			    preview_buffer + num_bytes,
 			    render_params.nBufferSize - num_bytes);
 	}
       printf("buffer recived, recived %ld bytes\n", num_bytes);
 
       //change nAllocLen in bufferheader
       client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
-      memcpy(client_video_render_in->pBuffer, temp_buffer, render_params.nBufferSize);
-      printf("copied buffer form temp into client_video_render_in\n");
+      memcpy(client_video_render_in->pBuffer, preview_buffer, render_params.nBufferSize);
+      printf("copied buffer form preview_buffer into client_video_render_in\n");
       //fix alloc len
       client_video_render_in->nFilledLen = render_params.nBufferSize;
 
@@ -468,8 +530,8 @@ void *initServerRcam(void *VoidPtrArgs)
   //// end of thread Cleanup
    
   //free buffer memory
-  free(temp_buffer);
-  printf("temp_buffer memory free");
+  free(preview_buffer);
+  printf("preview_buffer memory free");
   //!free ilobjects and make sure all allocated memory is free!
 
   //!free sockets try to ensure no zombies

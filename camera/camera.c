@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
   pthread_mutex_init(&cameraControl.mutexPtr, NULL);
   cameraControl.rcamDeInit = false;
 
-  cameraControl.previewDisplayed = true;
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;

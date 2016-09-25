@@ -15,6 +15,9 @@ This is pretty basic as I am new to this
 //returns a bound socket
 int getAndConnectTCPSocket(char* address, char* port);
 
+int listenAndAcceptTCPServerSocket(int socket_to_listen_on, int backlog);
+int getAndBindTCPServerSocket(char* port);
+  
 //write all and read all (to ensure full buffer is sent)
 void write_all(int socket, const void *buf, size_t num_bytes);
 void read_all(int socket, const void *buf, size_t num_bytes);
