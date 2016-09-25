@@ -208,10 +208,10 @@ int main(int argc, char *argv[])
   
   
   //sleep for 2 secs
-  sleep(10);
+  sleep(3);
 
   changePreviewRes(&cameraControl, 640, 480, 15);
-  sleep (5);
+  sleep (3);
   
   deInit(&localCameraControl);
   deInit(&cameraControl);

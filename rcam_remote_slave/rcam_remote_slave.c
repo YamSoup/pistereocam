@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     printState(ilclient_get_handle(camera));
-
+    /*
     ////////////////////////
     ////Initialize Image Encoder
 
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
 	exit(EXIT_FAILURE);
       }
-
+    */
     
     
     while(1)
