@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   localCameraControl.previewChanged = false;
   localCameraControl.previewWidth = 320;
   localCameraControl.previewHeight = 240;
-  localCameraControl.previewFramerate = 30;
+  localCameraControl.previewFramerate = 15;
   
   localCameraControl.photoChanged = false;
   localCameraControl.photoWidth = 2591;
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
-  cameraControl.previewFramerate = 30;
+  cameraControl.previewFramerate = 15;
 
   cameraControl.photoChanged = false;
   cameraControl.photoWidth = 2591; //max settings
