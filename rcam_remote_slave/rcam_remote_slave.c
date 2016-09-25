@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     printState(ilclient_get_handle(camera));
+    
     /*
     ////////////////////////
     ////Initialize Image Encoder
@@ -238,7 +239,8 @@ int main(int argc, char *argv[])
 	  read(socket_fd, &previewWidth, sizeof(previewWidth));
 	  read(socket_fd, &previewHeight, sizeof(previewHeight));
 	  read(socket_fd, &previewFramerate, sizeof(previewFramerate));
-	  //disable buffers
+	  //disable component and buffers
+	  ilclient_change_component_state(camera, OMX_StateIdle);
 	  ilclient_disable_port(camera, 70);
 	  ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
 	  //change the preview port
@@ -246,6 +248,7 @@ int main(int argc, char *argv[])
 	  //change the buffer size
 	  ilclient_enable_port(camera, 70);
 	  ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
+	  ilclient_change_component_state(camera, OMX_StateExecuting);
 	}
       if (current_command == SET_CAPTURE_RES)
 	{
