@@ -209,6 +209,10 @@ int main(int argc, char *argv[])
   
   //sleep for 2 secs
   sleep(10);
+
+  changePreviewRes(&cameraControl, 640, 480, 15);
+  sleep (5);
+  
   deInit(&localCameraControl);
   deInit(&cameraControl);
   pthread_join(localCamThreadID, NULL);

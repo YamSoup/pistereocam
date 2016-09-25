@@ -56,7 +56,7 @@ void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
 // MAIN
 int main(int argc, char *argv[])
 {
-    int preview_width, preview_height, count = 0;
+    int count = 0;
     int socket_fd;
     enum rcam_command current_command;
     bool deliver_preview = false;
@@ -215,14 +215,10 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
 	exit(EXIT_FAILURE);
       }
-    
 
     
     
-
-    bool continueLoop = true;
-    
-    while(continueLoop)
+    while(1)
     {
       count++;
       printf("count = %d\n", count);
@@ -232,14 +228,40 @@ int main(int argc, char *argv[])
       read(socket_fd, &current_command, sizeof(current_command));
       printf("got command = %d\n", (int)current_command);      
 
-      switch(current_command)
+      if (current_command == START_PREVIEW)
 	{
-	case NO_COMMAND: break;
-	case START_PREVIEW: deliver_preview = true; break;
-	case END_REMOTE_CAM: continueLoop = false; break;
+	  deliver_preview = true;
 	}
-
-      //if preview is running deliver preview
+      if (current_command == SET_PREVIEW_RES)
+	{
+	  //get the values
+	  read(socket_fd, &previewWidth, sizeof(previewWidth));
+	  read(socket_fd, &previewHeight, sizeof(previewHeight));
+	  read(socket_fd, &previewFramerate, sizeof(previewFramerate));
+	  //disable buffers
+	  ilclient_disable_port(camera, 70);
+	  ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
+	  //change the preview port
+	  setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
+	  //change the buffer size
+	  ilclient_enable_port(camera, 70);
+	  ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
+	}
+      if (current_command == SET_CAPTURE_RES)
+	{
+	  //get the values
+	  //change the capture port
+	  //send the value back?
+	}
+      if (current_command == TAKE_PHOTO)
+	{
+	  //something something
+	}
+      if (current_command == END_REMOTE_CAM)
+	{
+	  break;
+	}
+      
       if (deliver_preview == true)
 	{
 	  //print state (to check its still executing
@@ -273,6 +295,8 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
+    //destroy all components!!!
+    
     printf("exiting remote_cam.c");
     return 0;
 }
