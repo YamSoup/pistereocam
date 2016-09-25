@@ -244,6 +244,7 @@ int main(int argc, char *argv[])
 	  ilclient_change_component_state(camera, OMX_StateIdle);
 	  ilclient_disable_port(camera, 70);
 	  ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
+	  printf("disabled");
 	  //change the preview port
 	  setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 	  printf("after set\n");
