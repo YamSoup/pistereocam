@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   COMPONENT_T *local_camera = NULL, *local_video_render = NULL;
   TUNNEL_T tunnel_local_cam_to_local_video_render;
   memset(&tunnel_local_cam_to_local_video_render, 0, sizeof(tunnel_local_cam_to_local_video_render));
-
+  /*
   OMX_CONFIG_DISPLAYREGIONTYPE local_render_config;
   memset(&local_render_config, 0, sizeof(local_render_config));
   local_render_config.nVersion.nVersion = OMX_VERSION;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   local_port_params.nVersion.nVersion = OMX_VERSION;
   local_port_params.nSize = sizeof(local_port_params);
   local_port_params.nPortIndex = 72;
-
+  */
   //client camera variables
   COMPONENT_T *client_video_render = NULL;
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 
   int numbytes;
   char char_buffer[12];
-
+  /*
   OMX_PARAM_PORTDEFINITIONTYPE render_params;
   memset(&render_params, 0, sizeof(render_params));
   render_params.nVersion.nVersion = OMX_VERSION;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   render_config.nVersion.nVersion = OMX_VERSION;
   render_config.nSize = sizeof(render_config);
   render_config.nPortIndex = 90;
-
+  */
 
   /////////////////////////////////////////////////////////////////
   // STARTUP
@@ -154,7 +154,8 @@ int main(int argc, char *argv[])
   localCameraControl.previewChanged = false;
   localCameraControl.previewWidth = 320;
   localCameraControl.previewHeight = 240;
-
+  localCameraControl.previewFramerate = 30;
+  
   localCameraControl.photoChanged = false;
   localCameraControl.photoWidth = 2591;
   localCameraControl.photoHeight = 1944;
@@ -187,7 +188,7 @@ int main(int argc, char *argv[])
   cameraControl.previewChanged = false;
   cameraControl.previewWidth = 320;
   cameraControl.previewHeight = 240;
-
+  cameraControl.previewFramerate = 30;
 
   cameraControl.photoChanged = false;
   cameraControl.photoWidth = 2591; //max settings
