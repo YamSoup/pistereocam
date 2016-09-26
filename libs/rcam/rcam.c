@@ -450,7 +450,6 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //!!!
 	  //possibly wait for confirmation
 	  currentArgs->previewChanged = false;
-	  continue;
 	}
       else if (currentArgs->photoChanged == true)
 	{
@@ -468,13 +467,11 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //!!!
 	  //possibly wait for confirmation
 	  currentArgs->photoChanged = false;
-	  continue;
 	}
       else if (currentArgs->displayChanged == true)
 	{
 	  setRenderConfig(client_video_render, currentArgs->displayType);
 	  currentArgs->displayChanged = false;
-	  continue;
 	}      
       else if (currentArgs->takePhoto == true)
 	{
@@ -485,7 +482,6 @@ void *initServerRcam(void *VoidPtrArgs)
 	  read_all(client_socket_fd, &photo_buffer, photo_buffer_size);
 	  //save or do something with it?
 	  currentArgs->takePhoto = false;
-	  continue;
 	}
       //loop termination
       else if(currentArgs->rcamDeInit)
@@ -495,35 +491,37 @@ void *initServerRcam(void *VoidPtrArgs)
   	  printf("END_REMOTE_CAM sent\n");
 	  break; //exits while loop
 	}
-      
-      printf("get a buffer to process\n");
-      printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
-      num_bytes = read(client_socket_fd,
-		       preview_buffer,
-		       render_params.nBufferSize);
-      while (num_bytes < render_params.nBufferSize)
+      else
 	{
-	  num_bytes += read(client_socket_fd,
-			    preview_buffer + num_bytes,
-			    render_params.nBufferSize - num_bytes);
-	}
-      printf("buffer recived, recived %ld bytes\n", num_bytes);
-
-      //change nAllocLen in bufferheader
-      client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
-      memcpy(client_video_render_in->pBuffer, preview_buffer, render_params.nBufferSize);
-      printf("copied buffer form preview_buffer into client_video_render_in\n");
-      //fix alloc len
-      client_video_render_in->nFilledLen = render_params.nBufferSize;
-
-      //empty buffer into render component
-      OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
-      printf("Emptied buffer\n");
+	  //send no command
+	  current_command = NO_COMMAND;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
       
-      pthread_mutex_unlock(&currentArgs->mutexPtr);  
+	  printf("get a buffer to process\n");
+	  printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
+	  num_bytes = read(client_socket_fd,
+			   preview_buffer,
+			   render_params.nBufferSize);
+	  while (num_bytes < render_params.nBufferSize)
+	    {
+	      num_bytes += read(client_socket_fd,
+				preview_buffer + num_bytes,
+				render_params.nBufferSize - num_bytes);
+	    }
+	  printf("buffer recived, recived %ld bytes\n", num_bytes);
 
-      //send no command
-      write(client_socket_fd, &current_command, sizeof(current_command));
+	  //change nAllocLen in bufferheader
+	  client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
+	  memcpy(client_video_render_in->pBuffer, preview_buffer, render_params.nBufferSize);
+	  printf("copied buffer form preview_buffer into client_video_render_in\n");
+	  //fix alloc len
+	  client_video_render_in->nFilledLen = render_params.nBufferSize;
+
+	  //empty buffer into render component
+	  OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
+	  printf("Emptied buffer\n");
+	}      
+      pthread_mutex_unlock(&currentArgs->mutexPtr);  
     }
 
   ////////////////////////////////////////////////////////////

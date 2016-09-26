@@ -59,7 +59,8 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   ILCLIENT_T *client;
-
+  int result;
+  
   //local camera variables
   COMPONENT_T *local_camera = NULL, *local_video_render = NULL;
   TUNNEL_T tunnel_local_cam_to_local_video_render;
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
   // Initalize Components
   /////////////////////////////////////////////////////////////////
-
+  
   ///////////////////////////////////////////
   ////Local Camera
   ///////////////////////////////////////////
@@ -164,7 +165,7 @@ int main(int argc, char *argv[])
   localCameraControl.displayType = DISPLAY_SIDEBYSIDE_LEFT;
 
   pthread_t localCamThreadID;
-  int result;
+
 
   result = pthread_create(&localCamThreadID, NULL, initLocalCamera, (void *)&localCameraControl);
   if(result)
@@ -208,10 +209,8 @@ int main(int argc, char *argv[])
   
   
   //sleep for 2 secs
-  sleep(3);
+  sleep(30);
 
-  changePreviewRes(&cameraControl, 640, 480, 15);
-  sleep (3);
   
   deInit(&localCameraControl);
   deInit(&cameraControl);

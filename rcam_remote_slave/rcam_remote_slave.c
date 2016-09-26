@@ -220,78 +220,70 @@ int main(int argc, char *argv[])
     
     
     while(1)
-    {
-      count++;
-      printf("count = %d\n", count);
+      {
+	count++;
+	printf("count = %d\n", count);
 
-      //get command
-      printf("waiting for command\n");
-      read(socket_fd, &current_command, sizeof(current_command));
-      printf("got command = %d\n", (int)current_command);      
+	//get command
+	printf("waiting for command\n");
+	read(socket_fd, &current_command, sizeof(current_command));
+	printf("got command = %d\n", (int)current_command);      
 
-      if (current_command == START_PREVIEW)
-	{
-	  deliver_preview = true;
-	}
-      if (current_command == SET_PREVIEW_RES)
-	{
-	  //get the values
-	  read(socket_fd, &previewWidth, sizeof(previewWidth));
-	  read(socket_fd, &previewHeight, sizeof(previewHeight));
-	  read(socket_fd, &previewFramerate, sizeof(previewFramerate));
-	  printf("framerate = %d\n", previewFramerate);
-	  //disable component and buffers
-	  /*
-	  ilclient_change_component_state(camera, OMX_StatePaused);
-	  ilclient_disable_port(camera, 70);
-	  ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
-	  printf("disabled\n");
-	  */
-	  //change the preview port
-	  setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
-	  printf("after set\n");
-	  //change the buffer size
-	  ilclient_enable_port(camera, 70);
-	  ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
-	  ilclient_change_component_state(camera, OMX_StateExecuting);
-	}
-      if (current_command == SET_CAPTURE_RES)
-	{
-	  //get the values
-	  //change the capture port
-	  //send the value back?
-	}
-      if (current_command == TAKE_PHOTO)
-	{
-	  //something something
-	}
-      if (current_command == END_REMOTE_CAM)
-	{
-	  break;
-	}
-      
-      if (deliver_preview == true)
-	{
-	  //print state (to check its still executing
-	  printState(ilclient_get_handle(camera));
+	if (current_command == START_PREVIEW)
+	  {
+	    deliver_preview = true;
+	  }
+	else if (current_command == SET_PREVIEW_RES)
+	  {
+	    //get the values
+	    read(socket_fd, &previewWidth, sizeof(previewWidth));
+	    read(socket_fd, &previewHeight, sizeof(previewHeight));
+	    read(socket_fd, &previewFramerate, sizeof(previewFramerate));
+	    printf("framerate = %d\n", previewFramerate);
+	    //pause component
+	    ilclient_change_component_state(camera, OMX_StatePause);
+	    //change the preview port
+	    setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
+	    
+	    ilclient_change_component_state(camera, OMX_StateExecuting);
+	  }
+	else if (current_command == SET_CAPTURE_RES)
+	  {
+	    //get the values
+	    //change the capture port
+	    //send the value back?
+	  }
+	else if (current_command == TAKE_PHOTO)
+	  {
+	    //something something
+	  }
+	else if (current_command == END_REMOTE_CAM)
+	  {
+	    break;
+	  }
+	else if (current_command == NO_COMMAND)
+	  {
+	    if (deliver_preview = true)
+	      {
+		//print state (to check its still executing
+		printState(ilclient_get_handle(camera));
 	  
-	  //get buffer from camera
-	  OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(camera), previewHeader);
-	  previewHeader = ilclient_get_output_buffer(camera, 70, 1);
+		//get buffer from camera
+		OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(camera), previewHeader);
+		previewHeader = ilclient_get_output_buffer(camera, 70, 1);
 
-	  //send buffer, checks lengths to ensure all data is sent
-	  printf("nAllocLen = %d\n", previewHeader->nAllocLen);
-	  printf("sending buffer ... ");
-	  num_bytes = write(socket_fd, previewHeader->pBuffer, previewHeader->nAllocLen);
-	  while (num_bytes < previewHeader->nAllocLen)
-	    num_bytes += write(socket_fd, previewHeader->pBuffer + num_bytes, previewHeader->nAllocLen - num_bytes);	  
-	  printf("buffer sent, %ld bytes \n", num_bytes);
-	}
-      else
-	{
-	  ;//do nothing;
-	}
-    }//end of while loop
+		//send buffer, checks lengths to ensure all data is sent
+		printf("nAllocLen = %d\n", previewHeader->nAllocLen);
+		printf("sending buffer ... ");
+		num_bytes = write(socket_fd, previewHeader->pBuffer, previewHeader->nAllocLen);
+		while (num_bytes < previewHeader->nAllocLen)
+		  num_bytes += write(socket_fd,
+				     previewHeader->pBuffer + num_bytes,
+				     previewHeader->nAllocLen - num_bytes);   
+		printf("buffer sent, %ld bytes \n", num_bytes);
+	      }
+	  }
+      }//end of while loop
 
 
     //make camera idle again
