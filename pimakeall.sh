@@ -9,12 +9,14 @@ make -B -C libs/socket_helper
 echo "*** rcam ***"
 make -B -C libs/rcam
 
-echo "***** rcam_remote_slave *****"
+echo "\n***** rcam_remote_slave *****"
 make -B -C rcam_remote_slave
 
-echo "***** stereo_cam *****"
+echo "\n***** stereo_cam *****"
 make -B -C stereo_cam
 
-echo "***** camera *****"
+echo "\n***** camera *****"
 make -B -C camera
 
+echo "\n***** remote_cam *****"
+make -B -C remote_cam
