@@ -59,25 +59,12 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   ILCLIENT_T *client;
-  int result;
+  int PThreadResult; // for pthread
   
-  //local camera variables
-  COMPONENT_T *local_camera = NULL, *local_video_render = NULL;
-  TUNNEL_T tunnel_local_cam_to_local_video_render;
-  memset(&tunnel_local_cam_to_local_video_render, 0, sizeof(tunnel_local_cam_to_local_video_render));
-
   //client camera variables
   COMPONENT_T *client_video_render = NULL;
-
   OMX_ERRORTYPE OMXstatus;
-
-  uint32_t screen_width = 0, screen_height = 0;
-
-  OMX_BUFFERHEADERTYPE *client_video_render_in;
-
-  int numbytes;
-  char char_buffer[12];
-
+  
   /////////////////////////////////////////////////////////////////
   // STARTUP
   /////////////////////////////////////////////////////////////////
@@ -138,16 +125,20 @@ int main(int argc, char *argv[])
 
   pthread_t RcamThreadid;
 
-  result = pthread_create(&RcamThreadid, NULL, initServerRcam, (void *)&cameraControl);
-  if(result)
+  PThreadResult = pthread_create(&RcamThreadid, NULL, initServerRcam, (void *)&cameraControl);
+  if(PThreadResult)
     {
-      printf("ERROR creating rcam thread, error = %d\n", result);
+      printf("ERROR creating rcam thread, error = %d\n", PThreadResult);
       exit(EXIT_FAILURE);
     }
   
   
   //sleep for 2 secs
-  sleep(30);
+  sleep(2);
+
+  changePreviewRes(&cameraControl, 320, 320, 10);
+
+  sleep(2);
   
   deInit(&cameraControl);
   pthread_join(RcamThreadid, NULL);

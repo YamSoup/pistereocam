@@ -367,17 +367,16 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("handshake result = %s", char_buffer);
   
   write(client_socket_fd, "got\0", sizeof(char)*4);
-
+  //initalize preview
   write(client_socket_fd, &currentArgs->previewWidth, sizeof(currentArgs->previewWidth));
   write(client_socket_fd, &currentArgs->previewHeight, sizeof(currentArgs->previewHeight));
   write(client_socket_fd, &currentArgs->previewFramerate, sizeof(currentArgs->previewFramerate));
-
+  //initalize capture
   write(client_socket_fd, &currentArgs->photoWidth, sizeof(currentArgs->photoWidth));
   write(client_socket_fd, &currentArgs->photoHeight, sizeof(currentArgs->photoHeight));
       
 
   
-
   pthread_mutex_unlock(&currentArgs->mutexPtr);  
   
   ////////////////////////////////////////////////////////////
@@ -399,12 +398,12 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("sent command\n");
 
   current_command = NO_COMMAND;
-	  //possibly abandon current command
+	  // possibly abandon current command struct
 	  // and serialize the cameraControlStruct and sent that instead
 	  // see: http://stackoverflow.com/questions/1577161/passing-a-structure-through-sockets-in-c
 
 
-  
+  int count = 0;
   //modify to inifinate loop when control functions are writen
   while(1)
     {
@@ -412,8 +411,16 @@ void *initServerRcam(void *VoidPtrArgs)
 
       if (currentArgs->previewChanged == true)
 	{
+	  printf("in previewChanged !\n");
 	  //needs to:
 	  //change the renderer params this side
+	  OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateIdle);
+
+	  memset(&render_params, 0, sizeof(render_params));
+	  render_params.nVersion.nVersion = OMX_VERSION;
+	  render_params.nSize = sizeof(render_params);
+	  render_params.nPortIndex = 90;
+	  
 	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
 				    OMX_IndexParamPortDefinition,
 				    &render_params);
@@ -432,7 +439,16 @@ void *initServerRcam(void *VoidPtrArgs)
 				    &render_params);
 	  if (OMXstatus != OMX_ErrorNone)
 	    printf("Error Setting video render port parameters (in loop)");
+
+	  OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateExecuting);
+
 	  //resize the preview buffer
+
+	  memset(&render_params, 0, sizeof(render_params));
+	  render_params.nVersion.nVersion = OMX_VERSION;
+	  render_params.nSize = sizeof(render_params);
+	  render_params.nPortIndex = 90;
+	  
 	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
 				    OMX_IndexParamPortDefinition,
 				    &render_params);
@@ -440,6 +456,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	    printf("Error Getting video render port parameters (in loop)");
 	  free(preview_buffer);
 	  preview_buffer = malloc(render_params.nBufferSize + 1);
+	  
 	  //change the preview on the remote side
 	  current_command = SET_PREVIEW_RES;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
@@ -453,6 +470,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	}
       else if (currentArgs->photoChanged == true)
 	{
+	  printf("in photoChanged !\n");
 	  //needs to:
 	  //change the capture res on the remote side
 	  current_command = SET_CAPTURE_RES;
@@ -470,11 +488,13 @@ void *initServerRcam(void *VoidPtrArgs)
 	}
       else if (currentArgs->displayChanged == true)
 	{
+	  printf("in displayChanged !\n");
 	  setRenderConfig(client_video_render, currentArgs->displayType);
 	  currentArgs->displayChanged = false;
 	}      
       else if (currentArgs->takePhoto == true)
 	{
+	  printf("in takePhoto !\n");
 	  //needs to:
 	  //send command and then recive the capture
 	  current_command = TAKE_PHOTO;
@@ -486,6 +506,7 @@ void *initServerRcam(void *VoidPtrArgs)
       //loop termination
       else if(currentArgs->rcamDeInit)
 	{
+	  printf("in rcamDiInit !\n");
 	  current_command = END_REMOTE_CAM;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
   	  printf("END_REMOTE_CAM sent\n");
@@ -493,6 +514,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	}
       else
 	{
+	  printf("no commands in struct to parse !\n");
 	  //send no command
 	  current_command = NO_COMMAND;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
@@ -519,7 +541,8 @@ void *initServerRcam(void *VoidPtrArgs)
 
 	  //empty buffer into render component
 	  OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
-	  printf("Emptied buffer\n");
+	  count++;
+	  printf("Emptied buffer --- count = %d\n", count);
 	}      
       pthread_mutex_unlock(&currentArgs->mutexPtr);  
     }
@@ -529,7 +552,7 @@ void *initServerRcam(void *VoidPtrArgs)
    
   //free buffer memory
   free(preview_buffer);
-  printf("preview_buffer memory free");
+  printf("preview_buffer memory free\n");
   //!free ilobjects and make sure all allocated memory is free!
 
   //!free sockets try to ensure no zombies
@@ -622,6 +645,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
   //change needed params
+  port_params.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   port_params.format.video.nFrameWidth = width;
   port_params.format.video.nFrameHeight = height;
   port_params.format.video.nStride = width;
@@ -925,7 +949,7 @@ void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeigh
   // check if to large for buffer
   // buffer limit appears to be 2995200 doesn't appear to be effected by framerate?
   // bellow calc does not 
-  while ((long)newWidth * (long)newHeight > 2000000 )
+  if ((long)newWidth * (long)newHeight > 2000000 )
     {
       printf("resolution to large for buffer");
       return;
