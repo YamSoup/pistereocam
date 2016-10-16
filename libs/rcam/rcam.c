@@ -269,9 +269,6 @@ void *initServerRcam(void *VoidPtrArgs)
   render_params.nSize = sizeof(render_params);
   render_params.nPortIndex = 90;
 
-  int numbytes;
-
-
   enum rcam_command rcam_command = NO_COMMAND;
 
   /////////////////////////////////////////////////////////////////
@@ -454,6 +451,7 @@ void *initServerRcam(void *VoidPtrArgs)
 				    &render_params);
 	  if (OMXstatus != OMX_ErrorNone)
 	    printf("Error Getting video render port parameters (in loop)");
+
 	  free(preview_buffer);
 	  preview_buffer = malloc(render_params.nBufferSize + 1);
 	  
@@ -467,6 +465,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //!!!
 	  //possibly wait for confirmation
 	  currentArgs->previewChanged = false;
+	  sleep(1);
 	}
       else if (currentArgs->photoChanged == true)
 	{
@@ -544,7 +543,8 @@ void *initServerRcam(void *VoidPtrArgs)
 	  count++;
 	  printf("Emptied buffer --- count = %d\n", count);
 	}      
-      pthread_mutex_unlock(&currentArgs->mutexPtr);  
+      pthread_mutex_unlock(&currentArgs->mutexPtr);
+      usleep(600);
     }
 
   ////////////////////////////////////////////////////////////

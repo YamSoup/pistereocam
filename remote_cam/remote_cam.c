@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
   //sleep for 2 secs
   sleep(2);
 
-  changePreviewRes(&cameraControl, 320, 320, 10);
+  changePreviewRes(&cameraControl, 320, 320, 15);
 
   sleep(2);
   

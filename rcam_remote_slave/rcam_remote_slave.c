@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     read(socket_fd, &captureHeight, sizeof(captureHeight));
         
     printf("rcam_remote_slave recived values:\n");
-    printf("preview %d x %d framerate %d\n", previewWidth, previewHeight, previewFramerate);
+    printf("preview %d x %d   framerate %d   ", previewWidth, previewHeight, previewFramerate);
     printf("capture %d c %d\n", captureWidth, captureHeight);
     
     ////////////////////////////
@@ -239,13 +239,33 @@ int main(int argc, char *argv[])
 	    read(socket_fd, &previewWidth, sizeof(previewWidth));
 	    read(socket_fd, &previewHeight, sizeof(previewHeight));
 	    read(socket_fd, &previewFramerate, sizeof(previewFramerate));
+	    printf("previewWidth = %d\n", previewWidth);
+	    printf("previewHeight = %d\n", previewHeight);
 	    printf("framerate = %d\n", previewFramerate);
+	    printf("wat!!\n");
 	    //pause component
 	    ilclient_change_component_state(camera, OMX_StatePause);
+	    printState(ilclient_get_handle(camera));
+	    OMXStatus = OMX_SendCommand(ilclient_get_handle(camera), OMX_CommandFlush, 70, NULL);
+	    if (OMXstatus != OMX_ErrorNone)
+	      {
+		fprintf(stderr, "Error = %s\n", err2str(OMXstatus));
+		exit(EXIT_FAILURE);
+	      }
+
+	    printf("command sent ");
+	    ilclient_wait_for_event(camera, OMX_EventCmdComplete, OMX_CommandFlush, 0, 70, 0,
+				    ILCLIENT_PORT_FLUSH, VCOS_EVENT_FLAGS_SUSPEND);
+	    printf("flsuhed port ");
+	    ilclient_disable_port_buffers(camera, 70, NULL, NULL, NULL);
+      	    printf("disabled ports buffers\n");
 	    //change the preview port
 	    setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
+    	    ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
+	    printf("enabled ports\n");
 	    
 	    ilclient_change_component_state(camera, OMX_StateExecuting);
+	    
 	  }
 	else if (current_command == SET_CAPTURE_RES)
 	  {
