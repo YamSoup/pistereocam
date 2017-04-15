@@ -1,3 +1,4 @@
+VIEW THIS FILE AS RAW UNTILL I FIGURE OUT THE WEIRD AUTO FORMATING THIS SITE IS DOING!
 # pistereocam
 
 This is an attempt to create a working (and usable) stereocam from 2 raspberry pi's.
@@ -54,6 +55,12 @@ interface
 static ip_address=192.168.0.22/24
 nogateway
 
+
+*** Git on second Pi
+
+With this setup the 2nd pi has no internet access (i may tweek the settings so this changes)
+to clone the git repository I am using the command 'git clone ssh://pi@192.168.0.21/~/pistereocam'
+change this as needed if you have decided to rename the repository for any reason.
 
 
 
