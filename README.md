@@ -44,14 +44,13 @@ nogateway
 
 
 *** next create a file /lib/dhcpcd/dhcpcd-hooks/40-myroutes (with just the 1 line)
-route add 192.168.0.22
+route add 192.168.0.22 eth0
 
 
 
 *** on the second pi just add this to the bottom of /etc/dhcpcd.conf
-#THIS IS CURRENTLY NOT WORKING AND I DON'T KNOW WHY :S
 
-interface eth0
+interface
 static ip_address=192.168.0.22/24
 nogateway
 
@@ -61,5 +60,6 @@ nogateway
 ******** MAKEFILES 
 
 The Makefiles are very raw at the moment 
-currently you need to build each "lib" seperatly (and the ilclient lib in the /opt/vc/src/hello_pi/libs/ilclient)
-and then build remote_cam and stereo_cam seperatly.
+have now writen a script that builds all the libs and programs I wrote
+The programs are still relient on 1 libary being built which I will document when i remember which one it is.
+
