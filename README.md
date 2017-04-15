@@ -67,6 +67,7 @@ change this as needed if you have decided to rename the repository for any reaso
 ******** MAKEFILES 
 
 The Makefiles are very raw at the moment 
-have now writen a script that builds all the libs and programs I wrote
-The programs are still relient on 1 libary being built which I will document when i remember which one it is.
+build /opt/vc/src/hello_pi/libs/ilclient first
+I have now writen a script that builds all the libs and programs I wrote called
+
 
