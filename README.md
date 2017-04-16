@@ -1,3 +1,4 @@
+VIEW THIS FILE AS RAW UNTILL I FIGURE OUT THE WEIRD AUTO FORMATING THIS SITE IS DOING!
 # pistereocam
 
 This is an attempt to create a working (and usable) stereocam from 2 raspberry pi's.
@@ -16,80 +17,57 @@ I have also decided to use Wifi which has complicated things a bit
 
 Firstly I have changed the hostnames of each machine
 
+in the raspberry pi configeration change the hostname of the main pi (with the Wifi and screen)
+to StereoCameraServer or ...
+
 *** in /etc/hostname (Just the one line)
 
 StereoCameraServer
 
 *** in /etc/hosts
 
-127.0.0.1       localhost
-::1             localhost ip6-localhost ip6-loopback
-ff02::1         ip6-allnodes
-ff02::2         ip6-allrouters
-
+(keep the rest the same and edit this line)
 127.0.1.1       StereoCameraServer
 
 
 Next I had to set a static IP, this has changed a lot thanks to DHCPCD
-I decided to embrace change and try and use the new method (which is good but badly doicumented).
+I decided to embrace change and try and use the new method (which is good but badly documented).
 
 *** in /etc/dhcpcd.conf
 
-# A sample configuration for dhcpcd.
-# See dhcpcd.conf(5) for details.
-
-# Allow users of this group to interact with dhcpcd via the control socket.
-#controlgroup wheel
-
-# Inform the DHCP server of our hostname for DDNS.
-hostname
-
-# Use the hardware address of the interface for the Client ID.
-clientid
-# or
-# Use the same DUID + IAID as set in DHCPv6 for DHCPv4 ClientID as per RFC4361.
-#duid
-
-# Persist interface configuration when dhcpcd exits.
-persistent
-
-# Rapid commit support.
-# Safe to enable by default because it requires the equivalent option set
-# on the server to actually work.
-option rapid_commit
-
-# A list of options to request from the DHCP server.
-option domain_name_servers, domain_name, domain_search, host_name
-option classless_static_routes
-# Most distributions have NTP support.
-option ntp_servers
-# Respect the network MTU.
-# Some interface drivers reset when changing the MTU so disabled by default.
-#option interface_mtu
-
-# A ServerID is required by RFC2131.
-require dhcp_server_identifier
-
-# Generate Stable Private IPv6 Addresses instead of hardware based ones
-slaac private
-
-# A hook script is provided to lookup the hostname if not set by the DHCP
-# server, but it should not be run by default.
-nohook lookup-hostname
-
-# Custom static IP for eth0 metrix is set higher to priorotize wan0
+(add these lines to the bottom of the file keeping all the other options the same)
+# Custom static IP for eth0 crossover cable, metrix is set higher to priorotize wan0
 interface eth0
 metric 2000
 static ip_address=192.168.0.21/24
 nogateway
 
+
+
 *** next create a file /lib/dhcpcd/dhcpcd-hooks/40-myroutes (with just the 1 line)
-route add 192.168.0.22
+route add 192.168.0.22 eth0
+
+
+
+*** on the second pi just add this to the bottom of /etc/dhcpcd.conf
+
+interface
+static ip_address=192.168.0.22/24
+nogateway
+
+
+*** Git on second Pi
+
+With this setup the 2nd pi has no internet access (i may tweek the settings so this changes)
+to clone the git repository I am using the command 'git clone ssh://pi@192.168.0.21/~/pistereocam'
+change this as needed if you have decided to rename the repository for any reason.
 
 
 
 ******** MAKEFILES 
 
 The Makefiles are very raw at the moment 
-currently you need to build each "lib" seperatly (and the ilclient lib in the /opt/vc/src/hello_pi/libs/ilclient)
-and then build remote_cam and stereo_cam seperatly.
+build /opt/vc/src/hello_pi/libs/ilclient first
+I have now writen a script that builds all the libs and programs I wrote called
+
+
