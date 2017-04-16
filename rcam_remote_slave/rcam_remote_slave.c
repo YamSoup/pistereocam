@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 	    //pause component
 	    ilclient_change_component_state(camera, OMX_StatePause);
 	    printState(ilclient_get_handle(camera));
-	    OMXStatus = OMX_SendCommand(ilclient_get_handle(camera), OMX_CommandFlush, 70, NULL);
+	    OMXstatus = OMX_SendCommand(ilclient_get_handle(camera), OMX_CommandFlush, 70, NULL);
 	    if (OMXstatus != OMX_ErrorNone)
 	      {
 		fprintf(stderr, "Error = %s\n", err2str(OMXstatus));
