@@ -2,12 +2,38 @@
 
 #include <wiringPi.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-#define CAM_PIN 4
+#define PIN_NUM 0
 
-void myInterrupt(void)
+int count = 0;
+uint16_t state = 0;
+bool inuptInProgress = false;
+
+void myInterrupt()
 {
-  printf("button change");
+  printf("In Inturupt");
+  //check to see if already processing an inturrpt
+  if (inuptInProgress == true) return;
+
+  inuptInProgress = true;
+  int i;
+  for(i = 0; i > 1000; i++)
+    {
+      state = 0;
+      state = (state << 1) | digitalRead(PIN_NUM) | 0xe000;
+      
+      if(state == 0xf000)
+	{
+	  printf("button down/n");
+	}
+      else
+	printf("Button something");
+    }
+  inuptInProgress = false;
 }
 
 int main (void)
@@ -16,15 +42,18 @@ int main (void)
   //investigate this first (as does not require sudo but does require the gpios to be set somehow beforehand)
   //looking online this might be a poor choise but investigate further
   int result = 0;
-  result = wiringPiSetupSys();
-  printf("result = %d", result);
+  result = wiringPiSetup();
+  printf("result = %d/n", result);
 
+  pinMode(PIN_NUM, INPUT);
+  pullUpDnControl(PIN_NUM, PUD_UP);
   
-  wiringPiISR(CAM_PIN, INT_EDGE_BOTH, &myInterrupt); 
+  wiringPiISR(PIN_NUM, INT_EDGE_FALLING, &myInterrupt); 
 
   for(;;)
     {
-      //loop
+      usleep(10000);
+      printf("0x%16x\n", state);
     }
   
   return 0;
