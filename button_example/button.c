@@ -10,27 +10,27 @@
 #define PIN_NUM 0
 
 int count = 0;
-uint8_t state = 0;
+uint16_t state = 0;
 int interuptInProgress = false;
 
 void myInterrupt()
 {
-  //check to see if already processing an inturrpt
-  //if (interuptInProgress == true) return;
+  //NEED to check if mutex is locked and abort
+  //this is not doing the job
+  if (interuptInProgress == true) return;
 
-  //change this to an actual mutex
+  //this chunk of code is working quite well
   piLock(interuptInProgress);
-  printf("In inturupt\n");
+  state = 0;
   int x;
-  for(x = 0; x < 5000; x++) {
-    state = state | (uint8_t)digitalRead(PIN_NUM);
-    state = state << 1;
+  for(x = 0; x < 50; x++) {
+    state = state | (uint16_t)digitalRead(PIN_NUM);
     if (state == 0xffff) {
       printf("Debounced Button Press\n");
       break;
-    }    
+    }
+    state = state << 1;    
   }
-  printf("Exit without debounce");
   piUnlock(interuptInProgress);
   return;			    
 }
