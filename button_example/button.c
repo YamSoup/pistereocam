@@ -1,4 +1,4 @@
-// an example of an button using an interupt, perfect for the camera
+// an  example of an button using an interupt, perfect for the camera
 
 #include <wiringPi.h>
 #include <stdio.h>
@@ -10,50 +10,45 @@
 #define PIN_NUM 0
 
 int count = 0;
-uint16_t state = 0;
-bool inuptInProgress = false;
+uint8_t state = 0;
+int interuptInProgress = false;
 
 void myInterrupt()
 {
-  printf("In Inturupt");
   //check to see if already processing an inturrpt
-  if (inuptInProgress == true) return;
+  //if (interuptInProgress == true) return;
 
-  inuptInProgress = true;
-  int i;
-  for(i = 0; i > 1000; i++)
-    {
-      state = 0;
-      state = (state << 1) | digitalRead(PIN_NUM) | 0xe000;
-      
-      if(state == 0xf000)
-	{
-	  printf("button down/n");
-	}
-      else
-	printf("Button something");
-    }
-  inuptInProgress = false;
+  //change this to an actual mutex
+  piLock(interuptInProgress);
+  printf("In inturupt\n");
+  int x;
+  for(x = 0; x < 5000; x++) {
+    state = state | (uint8_t)digitalRead(PIN_NUM);
+    state = state << 1;
+    if (state == 0xffff) {
+      printf("Debounced Button Press\n");
+      break;
+    }    
+  }
+  printf("Exit without debounce");
+  piUnlock(interuptInProgress);
+  return;			    
 }
 
 int main (void)
 {
-  
-  //investigate this first (as does not require sudo but does require the gpios to be set somehow beforehand)
-  //looking online this might be a poor choise but investigate further
   int result = 0;
   result = wiringPiSetup();
-  printf("result = %d/n", result);
+  printf("result = %d\n", result);
 
   pinMode(PIN_NUM, INPUT);
   pullUpDnControl(PIN_NUM, PUD_UP);
   
   wiringPiISR(PIN_NUM, INT_EDGE_FALLING, &myInterrupt); 
 
-  for(;;)
+  while(1)
     {
-      usleep(10000);
-      printf("0x%16x\n", state);
+      usleep(400);
     }
   
   return 0;
