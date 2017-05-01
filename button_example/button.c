@@ -12,11 +12,10 @@
 #define button_down true
 
 int count = 0;
-pthread_mutex_t interupt_mutex;
-bool button_position = button_up;
 
 void *myButtonPoll()
 {
+  bool button_position = button_up;
   uint16_t state = 0x0e0e;
   while(1) {
     //printf("state = ox%x\n", state);
@@ -30,7 +29,8 @@ void *myButtonPoll()
       button_position = button_up;
     }
     state = state << 1;
-    usleep(5);
+    //usleep needed (belive the debounce is so bad multiple detections still happen)
+    usleep(10); 
   }
 } 
   
@@ -40,8 +40,6 @@ int main (void)
   int result = 0;
   pthread_t button_id;
   
-  result = pthread_mutex_init(&interupt_mutex, NULL);
-  printf("Mutex initalised state = %d\n", result);
   result = wiringPiSetup();
   printf("WiringPi result = %d\n", result);  
   
