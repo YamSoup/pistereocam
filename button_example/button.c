@@ -8,35 +8,32 @@
 #include <pthread.h>
 
 #define PIN_NUM 0
+#define button_up false
+#define button_down true
 
 int count = 0;
-uint16_t state = 0;
 pthread_mutex_t interupt_mutex;
+bool button_position = button_up;
 
 void *myButtonPoll()
 {
-  //needs a lot of work! but getting there
-  int x;
+  uint16_t state = 0x0e0e;
   while(1) {
-  if (pthread_mutex_trylock(&interupt_mutex) == 0) {
-    //this chunk of code is working quite well
-    state = 0;
-    for(x = 0; x < 20; x++) {
-      //printf("state = ox%x\n", state);
-      state = state | (uint16_t)digitalRead(PIN_NUM);
-      if (state == 0x0000) {
-	//might need to test for button up with 0xffff
-	printf("Debounced Button Press\n");
-	sleep(1);
-	break;
-      }
-      state = state << 1;    
+    //printf("state = ox%x\n", state);
+    state = state | (uint16_t)digitalRead(PIN_NUM);
+    if (state == 0x0000 && button_position == button_up) {
+      printf("Debounced Button Press\n");
+      button_position = button_down;
     }
-  pthread_mutex_unlock(&interupt_mutex);
+    if (state == 0xffff && button_position == button_down) {
+      printf("Debounced Button release\n");
+      button_position = button_up;
+    }
+    state = state << 1;
+    usleep(5);
   }
-  else printf("trylock block\n");  
-  }
-}
+} 
+  
 
 int main (void)
 {
@@ -59,7 +56,7 @@ int main (void)
   result = pthread_create(&button_id, NULL, myButtonPoll, NULL);
   printf("thread result = %d\n", result);
   
-  printf("pre main loop");
+  printf("pre main loop\n\n");
   while(1)
     {
       usleep(400);
