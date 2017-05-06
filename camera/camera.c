@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
   sleep(5);
   
-  changeCaptureRes(&cameraControl, 640, 480);
+  //  changeCaptureRes(&cameraControl, 640, 480);
   takePhoto(&cameraControl);
   
   deInit(&cameraControl);

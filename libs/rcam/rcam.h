@@ -79,7 +79,7 @@ struct cameraControl
   //display (renderer)
   bool displayChanged;
   enum displayTypes displayType;
-  //display size has been removed replaced with a function
+  //display size has been removed replaced with a function that places based on presets
   /*
   future implementations may change things like brightness etc
    */

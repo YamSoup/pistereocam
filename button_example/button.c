@@ -16,21 +16,23 @@ int count = 0;
 void *myButtonPoll()
 {
   bool button_position = button_up;
-  uint16_t state = 0x0e0e;
+  uint32_t state = 0x0e0e;
   while(1) {
     //printf("state = ox%x\n", state);
-    state = state | (uint16_t)digitalRead(PIN_NUM);
-    if (state == 0x0000 && button_position == button_up) {
+    state = state | (uint32_t)digitalRead(PIN_NUM);
+    if (state == 0x00000000 && button_position == button_up) {
       printf("Debounced Button Press\n");
       button_position = button_down;
+      usleep(200000);
     }
-    if (state == 0xffff && button_position == button_down) {
+    if (state == 0xffffffff && button_position == button_down) {
       printf("Debounced Button release\n");
       button_position = button_up;
+      usleep(200000);
     }
     state = state << 1;
     //usleep needed (belive the debounce is so bad multiple detections still happen)
-    usleep(10); 
+    usleep(200); 
   }
 } 
   

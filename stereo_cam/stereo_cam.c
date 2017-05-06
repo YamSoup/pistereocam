@@ -209,7 +209,10 @@ int main(int argc, char *argv[])
   
   
   //sleep for 2 secs
-  sleep(30);
+  sleep(10);
+  takePhoto(&cameraControl);
+  takePhoto(&localCameraControl);
+  sleep(10);
 
   
   deInit(&localCameraControl);

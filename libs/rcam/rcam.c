@@ -53,7 +53,7 @@ void *initLocalCamera(void *VoidPtrArgs)
   OMX_ERRORTYPE OMXstatus;
 
   FILE *file_out1;
-  file_out1 = fopen("pic1", "wb");
+  file_out1 = fopen("local_pic", "wb");
   
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
@@ -890,6 +890,7 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 	}
       if(decode_out->nFlags == 1)
 	{
+	  fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
 	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
 	  break;
 	}
