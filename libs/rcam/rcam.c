@@ -14,9 +14,8 @@
 #define PORT "8039"
 
 /*
-to be writen and tested in camera
-The task is to make a thread version of the existing camera.c
-next task will be to simplify the initServerRcam using the same functions
+working in camera.c still need to implement
+This is a test comment to see if git is working on windows
  */
 
 //untested
@@ -42,29 +41,29 @@ void *initLocalCamera(void *VoidPtrArgs)
 {
   struct cameraControl *currentArgs = VoidPtrArgs;
 
-  pthread_mutex_lock(&currentArgs->mutexPtr);  
+  pthread_mutex_lock(&currentArgs->mutexPtr);
   ILCLIENT_T *client = currentArgs->client;
   pthread_mutex_unlock(&currentArgs->mutexPtr);
 
   //////////////////
-  //VARIABLES 
- 
+  //VARIABLES
+
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   OMX_ERRORTYPE OMXstatus;
 
   FILE *file_out1;
   file_out1 = fopen("local_pic", "wb");
-  
+
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
   memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
-  
+
   //////////////////
   // STARTUP
 
   //////////////////
   // Initalize Components
-  
+
   //////////////////
   ////initialise camera
 
@@ -72,7 +71,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 			    &camera,
 			    "camera",
 			    ILCLIENT_DISABLE_ALL_PORTS);
-  
+
   OMXstatus = ilclient_change_component_state(camera, OMX_StateIdle);
   if (OMXstatus != OMX_ErrorNone)
     {
@@ -85,7 +84,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   //change the preview resolution
   setPreviewRes(camera, currentArgs->previewWidth, currentArgs->previewHeight, currentArgs->previewFramerate);
-  
+
   //////////////////
   ////Initialise video render
 
@@ -123,14 +122,14 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   //image format Param set
   setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
-   
+
   ////////////////////
   // enable components and tunnels
 
   //setup tunnel of camera preview to renderer
   set_tunnel(&tunnel_camera_to_render, camera, 70, video_render, 90);
   ilclient_setup_tunnel(&tunnel_camera_to_render, 0, 0);
-  
+
   // change camera component to executing
   OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
@@ -138,7 +137,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move camera component to Executing (1)\n");
       exit(EXIT_FAILURE);
     }
-  
+
   //change preview render to executing
   OMXstatus = ilclient_change_component_state(video_render, OMX_StateExecuting);
   if (OMXstatus != OMX_ErrorNone)
@@ -146,13 +145,13 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move video render component to Executing (1)\n");
       exit(EXIT_FAILURE);
     }
-    
+
   //enable port and buffers for output port of image encode
-  ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);  
+  ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
   ilclient_enable_port(image_encode, 341);
 
   //setup tunnel from camera image port too image encode
-  set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);    
+  set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
   ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
 
   //change image_encode to executing
@@ -162,10 +161,10 @@ void *initLocalCamera(void *VoidPtrArgs)
       fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
       exit(EXIT_FAILURE);
     }
-  
+
   /////////////////
   // Main Loop
-  
+
   while(1)
     {
       pthread_mutex_lock(&currentArgs->mutexPtr);
@@ -210,17 +209,17 @@ void *initLocalCamera(void *VoidPtrArgs)
       //try below to avoid busy wait
       //usleep(500);
     }
-  
+
   ///////////////
   //CLEANUP
 
   //close files
   fclose(file_out1);
-  
+
   //Disable components
 
   //call pthread_exit so caller can join
-  pthread_exit(NULL);  
+  pthread_exit(NULL);
 
 }
 
@@ -233,9 +232,9 @@ This function creates a renderer on the server and comunicates with rcam client 
 display a preview until stopped
 Somehow needs to take a photo as well?
 
-Idea for camera capture on rcam 
+Idea for camera capture on rcam
 Create a buffer large enough to hold the biggest image possible and an int for the size of the final buffer
-Transfer the whole image when it is finished 
+Transfer the whole image when it is finished
 This will get over the issue of having to wait for the flag to tell when the process has stopped !
 
 as a function that needs to be a thread this can only have 1 argument
@@ -248,16 +247,16 @@ either that or possibly a semephore to control the state
 The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
 void *initServerRcam(void *VoidPtrArgs)
-{    
+{
   struct cameraControl *currentArgs = VoidPtrArgs;
 
-  pthread_mutex_lock(&currentArgs->mutexPtr);  
+  pthread_mutex_lock(&currentArgs->mutexPtr);
   ILCLIENT_T *client = currentArgs->client;
   pthread_mutex_unlock(&currentArgs->mutexPtr);
 
   ///////////////////////////////////////////
   ////Variables
- 
+
   COMPONENT_T *client_video_render = NULL;
   OMX_ERRORTYPE OMXstatus;
 
@@ -277,7 +276,7 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("start of socket stuff in rcam\n");
 
   int socket_fd = 0, client_socket_fd = 0;
-  
+
   socket_fd = getAndBindTCPServerSocket(PORT);
   printf("waiting for remotecam to connect\n");
   client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
@@ -304,7 +303,7 @@ void *initServerRcam(void *VoidPtrArgs)
   // !!!
   // needs the checks that the local camera does
   // to ensure sanity (OR DOES IT ALREADY DO THIS ? IT MIGHT BE)
-  
+
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting video render port parameters (1)");
@@ -319,7 +318,7 @@ void *initServerRcam(void *VoidPtrArgs)
   OMXstatus = OMX_SetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting video render port parameters (1)");
-  
+
   //check(print) the port params
   memset(&render_params, 0, sizeof(render_params));
   render_params.nVersion.nVersion = OMX_VERSION;
@@ -331,10 +330,10 @@ void *initServerRcam(void *VoidPtrArgs)
     printf("Error Getting video render port parameters (1)");
 
   print_OMX_PARAM_PORTDEFINITIONTYPE(render_params);
-  
-  
+
+
   //ask ilclient to allocate buffers for client_video_render
-  
+
   printf("enable client_video_render_input port\n");
   ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
   ilclient_enable_port(client_video_render, 90);
@@ -351,18 +350,18 @@ void *initServerRcam(void *VoidPtrArgs)
   printf("***\n");
 
   //set the position on the screen
-  setRenderConfig(client_video_render, currentArgs->displayType);  
-  
+  setRenderConfig(client_video_render, currentArgs->displayType);
+
   ////////////////////////////////////////////////////////////
-  // INITIATE RCAM_REMOTE_SLAVE 
+  // INITIATE RCAM_REMOTE_SLAVE
 
   char char_buffer[12];
-  
+
   //handshake
   printf("waiting to recive handshake ... \n");
   read(client_socket_fd, char_buffer, 11);
   printf("handshake result = %s", char_buffer);
-  
+
   write(client_socket_fd, "got\0", sizeof(char)*4);
   //initalize preview
   write(client_socket_fd, &currentArgs->previewWidth, sizeof(currentArgs->previewWidth));
@@ -371,23 +370,23 @@ void *initServerRcam(void *VoidPtrArgs)
   //initalize capture
   write(client_socket_fd, &currentArgs->photoWidth, sizeof(currentArgs->photoWidth));
   write(client_socket_fd, &currentArgs->photoHeight, sizeof(currentArgs->photoHeight));
-      
 
-  
-  pthread_mutex_unlock(&currentArgs->mutexPtr);  
-  
+
+
+  pthread_mutex_unlock(&currentArgs->mutexPtr);
+
   ////////////////////////////////////////////////////////////
   //// Main Thread Loop
-  
+
   void * preview_buffer;
   preview_buffer = malloc(render_params.nBufferSize + 1 );
   printf("***preview nBufferSize = %d\n", render_params.nBufferSize);
   int photo_buffer_size;
   void * photo_buffer;
   //photo_buffer = malloc();
-  
+
   long int num_bytes = 0;
-  
+
   enum rcam_command current_command = START_PREVIEW;
   printf("current_command = %d\n", current_command);
   printf("sending command ...");
@@ -417,7 +416,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  render_params.nVersion.nVersion = OMX_VERSION;
 	  render_params.nSize = sizeof(render_params);
 	  render_params.nPortIndex = 90;
-	  
+
 	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
 				    OMX_IndexParamPortDefinition,
 				    &render_params);
@@ -445,7 +444,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  render_params.nVersion.nVersion = OMX_VERSION;
 	  render_params.nSize = sizeof(render_params);
 	  render_params.nPortIndex = 90;
-	  
+
 	  OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render),
 				    OMX_IndexParamPortDefinition,
 				    &render_params);
@@ -454,7 +453,7 @@ void *initServerRcam(void *VoidPtrArgs)
 
 	  free(preview_buffer);
 	  preview_buffer = malloc(render_params.nBufferSize + 1);
-	  
+
 	  //change the preview on the remote side
 	  current_command = SET_PREVIEW_RES;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
@@ -490,7 +489,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  printf("in displayChanged !\n");
 	  setRenderConfig(client_video_render, currentArgs->displayType);
 	  currentArgs->displayChanged = false;
-	}      
+	}
       else if (currentArgs->takePhoto == true)
 	{
 	  printf("in takePhoto !\n");
@@ -517,7 +516,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //send no command
 	  current_command = NO_COMMAND;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
-      
+
 	  printf("get a buffer to process\n");
 	  printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
 	  num_bytes = read(client_socket_fd,
@@ -542,14 +541,14 @@ void *initServerRcam(void *VoidPtrArgs)
 	  OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
 	  count++;
 	  printf("Emptied buffer --- count = %d\n", count);
-	}      
+	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
       usleep(600);
     }
 
   ////////////////////////////////////////////////////////////
   //// end of thread Cleanup
-   
+
   //free buffer memory
   free(preview_buffer);
   printf("preview_buffer memory free\n");
@@ -572,21 +571,21 @@ struct screenSizeStruct returnScreenSize(void)
   struct screenSizeStruct currentScreenSize;
   uint32_t currentScreenWidth = 0;
   uint32_t currentScreenHeight = 0;
-  
+
   //super special broadcom only function
   graphics_get_display_size(0/*framebuffer 0*/, &currentScreenWidth, &currentScreenHeight);
   currentScreenSize.width = (int)currentScreenWidth;
   currentScreenSize.height = (int)currentScreenHeight;
 
   return currentScreenSize;
-}    
+}
 
 //sets the capture resolution of the camera (any camera)
 void setCaptureRes(COMPONENT_T *camera, int width, int height)
 {
   //needs to check width and height to see if compatible with rpi
   printf("in setCapture\n");
-  
+
   OMX_PARAM_PORTDEFINITIONTYPE port_params;
   OMX_ERRORTYPE OMXstatus;
 
@@ -605,14 +604,14 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   port_params.format.image.nSliceHeight = 0;  //notneeded?
   //this does not work :( camera seams only to output YUV
   //port_params.format.image.eColorFormat = OMX_COLOR_Format32bitABGR8888;
-  
+
   //set changes
   OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
 
   /*
-  //print current config 
+  //print current config
   memset(&port_params, 0, sizeof(port_params));
   port_params.nVersion.nVersion = OMX_VERSION;
   port_params.nSize = sizeof(port_params);
@@ -632,7 +631,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
 {
   //needs to check width and height to see if compatible with rpi
   printf("in setPreviewRes\n");
-  
+
   OMX_PARAM_PORTDEFINITIONTYPE port_params;
   OMX_ERRORTYPE OMXstatus;
 
@@ -656,7 +655,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter In setPreviewRes. Error = %s\n", err2str(OMXstatus));
 
-  
+
   //print current config
   memset(&port_params, 0, sizeof(port_params));
   port_params.nVersion.nVersion = OMX_VERSION;
@@ -667,8 +666,8 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate)
   if (OMXstatus != OMX_ErrorNone)
     printf("Error Getting Parameter (2) In setPreviewRes. Error = %s\n", err2str(OMXstatus));
 
-  print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);      
-  
+  print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
+
 }
 
 // sets the preview size and position
@@ -678,18 +677,18 @@ void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenCo
   struct screenSizeStruct currentScreenSize;
   currentScreenSize = returnScreenSize();
 
-  int screenWidth = currentScreenSize.width; 
+  int screenWidth = currentScreenSize.width;
   int screenHeight = currentScreenSize.height;
-  
+
   printf("in setRenderConfig\n");
   OMX_ERRORTYPE OMXstatus;
-  
+
   OMX_CONFIG_DISPLAYREGIONTYPE render_config;
   memset(&render_config, 0, sizeof(render_config));
   render_config.nVersion.nVersion = OMX_VERSION;
   render_config.nSize = sizeof(render_config);
   render_config.nPortIndex = 90;
-  
+
   //curently only does fullscreen modify the stucture below with switch/if statements for the others
   render_config.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_DEST_RECT
 					   |OMX_DISPLAY_SET_FULLSCREEN
@@ -790,11 +789,11 @@ void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenCo
       render_config.dest_rect.x_offset = (screenWidth/3)*2;
       render_config.dest_rect.y_offset = screenHeight/2;
     }
-  
-  render_config.fullscreen = OMX_FALSE;  
+
+  render_config.fullscreen = OMX_FALSE;
   render_config.noaspect = OMX_FALSE;
   render_config.mode = OMX_DISPLAY_MODE_LETTERBOX;
-  
+
   OMXstatus = OMX_SetConfig(ilclient_get_handle(video_render), OMX_IndexConfigDisplayRegion, &render_config);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter. Error = %s\n", err2str(OMXstatus));
@@ -810,9 +809,9 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 {
   printf("in setParamImageFormat\n");
   OMX_ERRORTYPE OMXstatus;
-  
+
   //image format stucture */
-  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;  
+  OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;
   memset(&image_format, 0, sizeof(image_format));
   image_format.nVersion.nVersion = OMX_VERSION;
   image_format.nSize = sizeof(image_format);
@@ -822,7 +821,7 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
   if(formatType == JPEG_HIGH_FORMAT || formatType == JPEG_MEDIUM_FORMAT || formatType == JPEG_LOW_FORMAT)
     {
       image_format.eCompressionFormat = OMX_IMAGE_CodingJPEG;
-        
+
       OMX_IMAGE_PARAM_QFACTORTYPE compression_format;
       memset(&compression_format, 0, sizeof(compression_format));
       compression_format.nVersion.nVersion = OMX_VERSION;
@@ -835,12 +834,12 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 	compression_format.nQFactor = 60;
       else if (formatType == JPEG_LOW_FORMAT)
 	compression_format.nQFactor = 10;
-      
+
       OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamQFactor, &compression_format);
       if(OMXstatus != OMX_ErrorNone)
 	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
     }
-  
+
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
@@ -848,14 +847,14 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 
 
 //currently needs the image encode to be executing and a tunnel inplace
-//this maybe should be ensured through the init 
+//this maybe should be ensured through the init
 void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 {
   printf("in savePhoto\n");
-  
+
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
-  
+
   printf("capture started\n");
 
   // needed to notify camera component of image capture
@@ -870,23 +869,23 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
   still_capture_in_progress.bEnabled = OMX_TRUE;
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
 			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
+			       &still_capture_in_progress);
   if (OMXstatus != OMX_ErrorNone)
     {
       fprintf(stderr, "unable to set Config (1)\n");
       exit(EXIT_FAILURE);
-    }  
+    }
 
   while(1)
     {
       decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
       printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
       printf("decode_out bufferflags = %d\n", decode_out->nFlags);
-      
-      if(decode_out->nFilledLen != 0) 
+
+      if(decode_out->nFilledLen != 0)
 	{
 	fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
-        
+
 	}
       if(decode_out->nFlags == 1)
 	{
@@ -903,16 +902,16 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
   still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
   still_capture_in_progress.nPortIndex = 72;
   still_capture_in_progress.bEnabled = OMX_FALSE;
-  
+
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
 			       OMX_IndexConfigPortCapturing,
-			       &still_capture_in_progress);  
+			       &still_capture_in_progress);
   if (OMXstatus != OMX_ErrorNone)
     {
       fprintf(stderr, "unable to set Config (1)\n");
       exit(EXIT_FAILURE);
-    }  
-  
+    }
+
   printf("captureSaved\n");
 }
 
@@ -949,13 +948,13 @@ void changePreviewRes(struct cameraControl *toChange, int newWidth, int newHeigh
 
   // check if to large for buffer
   // buffer limit appears to be 2995200 doesn't appear to be effected by framerate?
-  // bellow calc does not 
+  // bellow calc does not
   if ((long)newWidth * (long)newHeight > 2000000 )
     {
       printf("resolution to large for buffer");
       return;
     }
-  
+
   pthread_mutex_lock(&toChange->mutexPtr);
   toChange->previewChanged = true;
   toChange->previewWidth = newWidth;
@@ -971,7 +970,7 @@ void changeCaptureRes(struct cameraControl *toChange, int newWidth, int newHeigh
   toChange->photoChanged = true;
   toChange->photoWidth = newWidth;
   toChange->photoHeight = newHeight;
-  pthread_mutex_unlock(&toChange->mutexPtr);  
+  pthread_mutex_unlock(&toChange->mutexPtr);
 }
 void changeDisplayType(struct cameraControl *toChange, enum displayTypes newDisplayType)
 {
