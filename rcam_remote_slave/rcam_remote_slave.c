@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
     TUNNEL_T tunnel_camera_to_encode;
     memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
-    
+
     OMX_BUFFERHEADERTYPE *previewHeader;
 
     //INITIALIZE CAMERA STUFF
@@ -135,14 +135,14 @@ int main(int argc, char *argv[])
     read(socket_fd, &previewWidth, sizeof(previewWidth));
     read(socket_fd, &previewHeight, sizeof(previewHeight));
     read(socket_fd, &previewFramerate, sizeof(previewFramerate));
-    
+
     read(socket_fd, &captureWidth, sizeof(captureWidth));
     read(socket_fd, &captureHeight, sizeof(captureHeight));
-        
+
     printf("rcam_remote_slave recived values:\n");
     printf("preview %d x %d   framerate %d   ", previewWidth, previewHeight, previewFramerate);
     printf("capture %d c %d\n", captureWidth, captureHeight);
-    
+
     ////////////////////////////
     //initialize camera
     ilclient_create_component(client,
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     printState(ilclient_get_handle(camera));
-    
+
     /*
     ////////////////////////
     ////Initialize Image Encoder
@@ -199,16 +199,16 @@ int main(int argc, char *argv[])
 
     //image format Param set
     setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
-    
+
     ////////////////////////
     ////enable tunnel and image encode
 
     ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
     ilclient_enable_port(image_encode, 341);
-    
+
     set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
     ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
-    
+
     //change image_encode to executing
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
     if (OMXstatus != OMX_ErrorNone)
@@ -217,8 +217,8 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
       }
     */
-    
-    
+
+
     while(1)
       {
 	count++;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	//get command
 	printf("waiting for command\n");
 	read(socket_fd, &current_command, sizeof(current_command));
-	printf("got command = %d\n", (int)current_command);      
+	printf("got command = %d\n", (int)current_command);
 
 	if (current_command == START_PREVIEW)
 	  {
@@ -263,9 +263,9 @@ int main(int argc, char *argv[])
 	    setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
     	    ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
 	    printf("enabled ports\n");
-	    
+
 	    ilclient_change_component_state(camera, OMX_StateExecuting);
-	    
+
 	  }
 	else if (current_command == SET_CAPTURE_RES)
 	  {
@@ -275,8 +275,11 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
-	    //something something
-	  }
+        //2 options save locally or
+        //store in a buffer
+        //send size of buffer
+        //send buffer
+      }
 	else if (current_command == END_REMOTE_CAM)
 	  {
 	    break;
@@ -287,7 +290,7 @@ int main(int argc, char *argv[])
 	      {
 		//print state (to check its still executing
 		printState(ilclient_get_handle(camera));
-	  
+
 		//get buffer from camera
 		OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(camera), previewHeader);
 		previewHeader = ilclient_get_output_buffer(camera, 70, 1);
@@ -295,11 +298,12 @@ int main(int argc, char *argv[])
 		//send buffer, checks lengths to ensure all data is sent
 		printf("nAllocLen = %d\n", previewHeader->nAllocLen);
 		printf("sending buffer ... ");
-		num_bytes = write(socket_fd, previewHeader->pBuffer, previewHeader->nAllocLen);
+		num_bytes = write(socket_fd, previewHeader->pBuffer,	  savePhoto(camera, image_encode, file_out1);
+ previewHeader->nAllocLen);
 		while (num_bytes < previewHeader->nAllocLen)
 		  num_bytes += write(socket_fd,
 				     previewHeader->pBuffer + num_bytes,
-				     previewHeader->nAllocLen - num_bytes);   
+				     previewHeader->nAllocLen - num_bytes);
 		printf("buffer sent, %ld bytes \n", num_bytes);
 	      }
 	  }
@@ -316,7 +320,7 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //destroy all components!!!
-    
+
     printf("exiting remote_cam.c");
     return 0;
 }

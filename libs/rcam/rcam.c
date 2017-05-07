@@ -163,7 +163,7 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
 
   /////////////////
-  // Main Loop
+  // Main initLocalCamera() Loop
 
   while(1)
     {
@@ -195,6 +195,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       else if (currentArgs->takePhoto == true)
 	{
 	  savePhoto(camera, image_encode, file_out1);
+	  //TODO close file and open next!
 	  currentArgs->takePhoto = false;
 	}
       //loop termination
@@ -269,6 +270,10 @@ void *initServerRcam(void *VoidPtrArgs)
   render_params.nPortIndex = 90;
 
   enum rcam_command rcam_command = NO_COMMAND;
+
+  FILE *file_out2;
+  file_out2 = fopen("remote_pic", "wb");
+
 
   /////////////////////////////////////////////////////////////////
   // SOCKET STUFF
@@ -497,11 +502,11 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //send command and then recive the capture
 	  current_command = TAKE_PHOTO;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
-	  read_all(client_socket_fd, &photo_buffer, photo_buffer_size);
-	  //save or do something with it?
+	  //rcam need to say how big the file is before transfering?
+	  read_all(client_socket_fd, &file_out2, photo_buffer_size);
 	  currentArgs->takePhoto = false;
 	}
-      //loop termination
+      //loop terminationcurrent_command = TAKE_PHOTO;
       else if(currentArgs->rcamDeInit)
 	{
 	  printf("in rcamDiInit !\n");

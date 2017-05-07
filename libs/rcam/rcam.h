@@ -40,7 +40,7 @@ enum displayTypes
     DISPLAY_SIXTH_TOP_RIGHT = 63,
     DISPLAY_SIXTH_BOTTOM_LEFT = 64,
     DISPLAY_SIXTH_BOTTOM_MIDDLE = 65,
-    DISPLAY_SIXTH_BOTTOM_RIGHT = 66,    
+    DISPLAY_SIXTH_BOTTOM_RIGHT = 66,
   };
 
 //used in setParamImageFormat
@@ -66,7 +66,7 @@ struct cameraControl
   bool rcamDeInit;
   bool takePhoto;
   // bool previewDisplayed;
-  
+
   //preview
   bool previewChanged;
   int previewFramerate;
