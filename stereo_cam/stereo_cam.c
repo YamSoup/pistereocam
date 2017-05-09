@@ -212,6 +212,8 @@ int main(int argc, char *argv[])
   sleep(10);
   takePhoto(&cameraControl);
   takePhoto(&localCameraControl);
+  sleep(2);
+  
   sleep(10);
 
   

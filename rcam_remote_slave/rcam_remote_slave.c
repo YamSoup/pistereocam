@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
     COMPONENT_T *camera = NULL, *image_encode = NULL;
     OMX_ERRORTYPE OMXstatus;
 
-    FILE *file_out;
-    file_out = fopen("rcam1", "wb");
+    FILE *file_out2;
+    file_out2 = fopen("rcam1", "wb");
 
     TUNNEL_T tunnel_camera_to_encode;
     memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
@@ -273,11 +273,14 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
-        //2 options save locally or
-        //store in a buffer
-        //send size of buffer
-        //send buffer
-      }
+	    //2 options save locally
+	    savePhoto(camera, image_encode, file_out2);
+	    current_command == NO_COMMAND;
+	    //or
+	    //store in a buffer
+	    //send size of buffer
+	    //send buffer
+	  }
 	else if (current_command == END_REMOTE_CAM)
 	  {
 	    break;
@@ -296,8 +299,7 @@ int main(int argc, char *argv[])
 		//send buffer, checks lengths to ensure all data is sent
 		printf("nAllocLen = %d\n", previewHeader->nAllocLen);
 		printf("sending buffer ... ");
-		num_bytes = write(socket_fd, previewHeader->pBuffer,	  savePhoto(camera, image_encode, file_out1);
- previewHeader->nAllocLen);
+		num_bytes = write(socket_fd, previewHeader->pBuffer,  previewHeader->nAllocLen);
 		while (num_bytes < previewHeader->nAllocLen)
 		  num_bytes += write(socket_fd,
 				     previewHeader->pBuffer + num_bytes,
