@@ -271,10 +271,6 @@ void *initServerRcam(void *VoidPtrArgs)
 
   enum rcam_command rcam_command = NO_COMMAND;
 
-  FILE *file_out2;
-  file_out2 = fopen("remote_pic", "wb");
-
-
   /////////////////////////////////////////////////////////////////
   // SOCKET STUFF
 

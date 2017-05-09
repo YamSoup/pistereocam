@@ -320,6 +320,7 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //destroy all components!!!
+    close(file_out2);
 
     printf("exiting remote_cam.c");
     return 0;
