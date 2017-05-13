@@ -379,13 +379,15 @@ void *initServerRcam(void *VoidPtrArgs)
   ////////////////////////////////////////////////////////////
   //// Main Thread Loop
 
+  
   void * preview_buffer;
   preview_buffer = malloc(render_params.nBufferSize + 1 );
   printf("***preview nBufferSize = %d\n", render_params.nBufferSize);
+
   int photo_buffer_size;
   void * photo_buffer;
   //photo_buffer = malloc();
-
+  
   long int num_bytes = 0;
 
   enum rcam_command current_command = START_PREVIEW;
@@ -496,8 +498,8 @@ void *initServerRcam(void *VoidPtrArgs)
 	  printf("in takePhoto !\n");
 	  //needs to:
 	  //send command and then recive the capture
-	  //current_command = TAKE_PHOTO;
-	  //write(client_socket_fd, &current_command, sizeof(current_command));	  
+	  current_command = TAKE_PHOTO;
+	  write(client_socket_fd, &current_command, sizeof(current_command));	  
 	  currentArgs->takePhoto = false;
 	  printf("end of take photo\n");
 	}

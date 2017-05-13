@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 	printf("count = %d\n", count);
 
 	//get command
-	printf("waiting for command ... ");
+	printf("waiting for command ... \n IN RCAM\n\n\n");
 	read(socket_fd, &current_command, sizeof(current_command));
 	printf("got command = %d\n", (int)current_command);
 
