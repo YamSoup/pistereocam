@@ -498,7 +498,9 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //send command and then recive the capture
 	  current_command = TAKE_PHOTO;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
+	  pthread_mutex_unlock(&currentArgs->mutexPtr);
 	  currentArgs->takePhoto = false;
+	  pthread_mutex_lock(&currentArgs->mutexPtr);
 	}
       //loop terminationcurrent_command = TAKE_PHOTO;
       else if(currentArgs->rcamDeInit)
