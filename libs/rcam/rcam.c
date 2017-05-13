@@ -848,8 +848,7 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 }
 
 
-//currently needs the image encode to be executing and a tunnel inplace
-//this maybe should be ensured through the init
+//in development
 void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 {
   printf("in savePhoto\n");
