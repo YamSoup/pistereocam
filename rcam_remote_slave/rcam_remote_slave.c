@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 	    //change the capture port
 	    //send the value back?
 	  }
-	else if (current_command == TAKE_PHOTO)
+	else if (current_command == TAKE_PHOTO || current_command == 90)
 	  {
 	    //2 options save locally
 	    printf("In rcam_remote_slave take photo\n");
