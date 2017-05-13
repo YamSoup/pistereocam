@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
   takePhoto(&cameraControl);
 
-  sleep(10);
+  sleep(2);
   
   deInit(&cameraControl);
   pthread_join(RcamThreadid, NULL);

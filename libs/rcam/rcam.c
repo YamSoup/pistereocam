@@ -497,6 +497,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //needs to:
 	  //send command and then recive the capture
 	  current_command = TAKE_PHOTO;
+	  write(client_socket_fd, &current_command, sizeof(current_command));
 	  //write(client_socket_fd, &current_command, sizeof(current_command));
 	  //rcam need to say how big the file is before transfering?
 	  //read_all(client_socket_fd, &file_out2, photo_buffer_size);
