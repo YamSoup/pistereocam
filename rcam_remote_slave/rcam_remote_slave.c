@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 	printf("count = %d\n", count);
 
 	//get command
-	printf("waiting for command\n");
+	printf("waiting for command ... ");
 	read(socket_fd, &current_command, sizeof(current_command));
 	printf("got command = %d\n", (int)current_command);
 
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 	  {
 	    //2 options save locally
 	    savePhoto(camera, image_encode, file_out2);
-	    current_command == NO_COMMAND;
+	    //current_command == NO_COMMAND;
 	    //or
 	    //store in a buffer
 	    //send size of buffer
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
     printState(ilclient_get_handle(camera));
 
     //destroy all components!!!
-    close(file_out2);
+    fclose(file_out2);
 
     printf("exiting remote_cam.c");
     return 0;
