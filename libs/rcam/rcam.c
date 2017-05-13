@@ -496,10 +496,10 @@ void *initServerRcam(void *VoidPtrArgs)
 	  printf("in takePhoto !\n");
 	  //needs to:
 	  //send command and then recive the capture
-	  current_command = TAKE_PHOTO;
-	  write(client_socket_fd, &current_command, sizeof(current_command));	  
+	  //current_command = TAKE_PHOTO;
+	  //write(client_socket_fd, &current_command, sizeof(current_command));	  
 	  currentArgs->takePhoto = false;
-	  continue;
+	  printf("end of take photo\n");
 	}
       //loop terminationcurrent_command = TAKE_PHOTO;
       else if(currentArgs->rcamDeInit)
@@ -543,7 +543,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  printf("Emptied buffer --- count = %d\n", count);
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
-      usleep(600);
+      usleep(500);
     }
 
   ////////////////////////////////////////////////////////////
