@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
                               &camera,
                               "camera",
                               ILCLIENT_DISABLE_ALL_PORTS
-			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
+			      );
+    
     printState(ilclient_get_handle(camera));
 
     OMXstatus = ilclient_change_component_state(camera, OMX_StateIdle);

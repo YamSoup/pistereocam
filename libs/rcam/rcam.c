@@ -894,6 +894,7 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 	  OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
 	  break;
 	}
+      //crashes if starts with 0 buffer?
       OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
     }
 
