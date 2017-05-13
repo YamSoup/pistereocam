@@ -400,7 +400,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  // see: http://stackoverflow.com/questions/1577161/passing-a-structure-through-sockets-in-c
 
 
-  int count = 0;
+  int count = 500;
   //modify to inifinate loop when control functions are writen
   while(1)
     {

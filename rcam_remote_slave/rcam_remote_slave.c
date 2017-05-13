@@ -274,7 +274,8 @@ int main(int argc, char *argv[])
 	else if (current_command == TAKE_PHOTO)
 	  {
 	    //2 options save locally
-	    savePhoto(camera, image_encode, file_out2);
+	    printf("In rcam_remote_slave take photo\n");
+	    //savePhoto(camera, image_encode, file_out2);	    
 	    //current_command == NO_COMMAND;
 	    //or
 	    //store in a buffer
