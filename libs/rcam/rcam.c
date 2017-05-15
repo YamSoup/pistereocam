@@ -858,6 +858,8 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
 
   printf("capture started\n");
 
+
+  
   // needed to notify camera component of image capture
   OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
   memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));

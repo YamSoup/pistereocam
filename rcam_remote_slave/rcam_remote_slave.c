@@ -171,6 +171,9 @@ int main(int argc, char *argv[])
     //assign the buffers
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
     ilclient_enable_port(camera, 70);
+
+    ilclient_enable_port_buffers(camera, 72, NULL, NULL, NULL);
+    ilclient_enable_port(camera, 72);
     printState(ilclient_get_handle(camera));
 
     //change the camera state to executing
