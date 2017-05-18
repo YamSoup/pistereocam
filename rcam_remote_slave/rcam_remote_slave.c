@@ -149,8 +149,13 @@ int main(int argc, char *argv[])
                               &camera,
                               "camera",
                               ILCLIENT_DISABLE_ALL_PORTS
-			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
+			      //| ILCLIENT_ENABLE_OUTPUT_BUFFERS
 			      );
+
+    //currently I am thinking the issue is this component setup
+    //the ilclient.c is in /opt/vc/src/hello_pi/libs/ilclient/
+    //it uses OMX calls which i belive I can understand and will have to experiment with
+    //and impement them on the ports directly
     
     printState(ilclient_get_handle(camera));
 
@@ -169,11 +174,11 @@ int main(int argc, char *argv[])
     setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 
     //assign the buffers
+    //this is needed as the camera does not have a compnent for the preview
+    //without manually enabling the buffers nothing can be displayed on the other side
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
     ilclient_enable_port(camera, 70);
 
-    ilclient_enable_port_buffers(camera, 72, NULL, NULL, NULL);
-    ilclient_enable_port(camera, 72);
     printState(ilclient_get_handle(camera));
 
     //change the camera state to executing
@@ -193,6 +198,7 @@ int main(int argc, char *argv[])
 			      &image_encode,
 			      "image_encode",
 			      ILCLIENT_DISABLE_ALL_PORTS
+			      //
 			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
 
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
