@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
   //changePreviewRes(&cameraControl, 320, 320, 15);
 
-  sleep(2);
+  sleep(10);
 
   takePhoto(&cameraControl);
 

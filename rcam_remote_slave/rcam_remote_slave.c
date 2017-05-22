@@ -41,10 +41,8 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 #include "socket_helper.h"
 #include "rcam.h"
 
-//loopback ip for testing
-//define IP_ADD "127.0.0.1"
-
-#define IP_ADD "192.168.0.21"
+#define IP_ADD "127.0.0.1" //loopback ip
+//#define IP_ADD "192.168.0.21"
 #define SERV_PORT "8039"
 
 ////////////////////////////////////////////////////////////////
@@ -149,7 +147,7 @@ int main(int argc, char *argv[])
                               &camera,
                               "camera",
                               ILCLIENT_DISABLE_ALL_PORTS
-			      //| ILCLIENT_ENABLE_OUTPUT_BUFFERS
+			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
 			      );
 
     //currently I am thinking the issue is this component setup
@@ -173,9 +171,7 @@ int main(int argc, char *argv[])
     //set default preview resolution
     setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 
-    //assign the buffers
-    //this is needed as the camera does not have a compnent for the preview
-    //without manually enabling the buffers nothing can be displayed on the other side
+    //hope
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
     ilclient_enable_port(camera, 70);
 
@@ -194,11 +190,12 @@ int main(int argc, char *argv[])
     ////////////////////////
     ////Initialize Image Encoder
 
+    
+    
     ilclient_create_component(client,
 			      &image_encode,
 			      "image_encode",
 			      ILCLIENT_DISABLE_ALL_PORTS
-			      //
 			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
 
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
@@ -220,6 +217,8 @@ int main(int argc, char *argv[])
     set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
     ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
 
+    
+
     //change image_encode to executing
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
     if (OMXstatus != OMX_ErrorNone)
@@ -227,6 +226,8 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
 	exit(EXIT_FAILURE);
       }
+
+    
 
     while(1)
       {
@@ -282,7 +283,7 @@ int main(int argc, char *argv[])
 	    //change the capture port
 	    //send the value back?
 	  }
-	else if (current_command == TAKE_PHOTO || current_command == 90)
+	else if (current_command == TAKE_PHOTO)
 	  {
 	    //2 options save locally
 	    printf("In rcam_remote_slave take photo\n");
@@ -305,10 +306,9 @@ int main(int argc, char *argv[])
 		//print state (to check its still executing
 		printState(ilclient_get_handle(camera));
 
-		//get buffer from camera
+		//get buffer from camera		
 		OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(camera), previewHeader);
-		previewHeader = ilclient_get_output_buffer(camera, 70, 1);
-
+		previewHeader = ilclient_get_output_buffer(camera, 70, 1);		
 		//send buffer, checks lengths to ensure all data is sent
 		printf("nAllocLen = %d\n", previewHeader->nAllocLen);
 		printf("sending buffer ... ");
