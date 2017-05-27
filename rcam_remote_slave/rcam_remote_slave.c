@@ -171,7 +171,6 @@ int main(int argc, char *argv[])
     //set default preview resolution
     setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
 
-    //hope
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
     ilclient_enable_port(camera, 70);
 
@@ -196,7 +195,8 @@ int main(int argc, char *argv[])
 			      &image_encode,
 			      "image_encode",
 			      ILCLIENT_DISABLE_ALL_PORTS
-			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS);
+			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
+			      );
 
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateIdle);
     if (OMXstatus != OMX_ErrorNone)
@@ -214,10 +214,11 @@ int main(int argc, char *argv[])
     ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
     ilclient_enable_port(image_encode, 341);
 
+    ilclient_disable_port_buffers(camera, 72, NULL, NULL, NULL);
+    ilclient_disable_port(camera, 72);
+    
     set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
     ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
-
-    
 
     //change image_encode to executing
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
@@ -226,6 +227,8 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
 	exit(EXIT_FAILURE);
       }
+
+
 
     
 

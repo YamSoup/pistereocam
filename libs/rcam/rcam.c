@@ -149,7 +149,7 @@ void *initLocalCamera(void *VoidPtrArgs)
   //enable port and buffers for output port of image encode
   ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
   ilclient_enable_port(image_encode, 341);
-
+  
   //setup tunnel from camera image port too image encode
   set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
   ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
