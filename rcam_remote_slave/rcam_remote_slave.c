@@ -66,10 +66,6 @@ int main(int argc, char *argv[])
     FILE *file_out2;
     file_out2 = fopen("rcam1", "wb");
 
-    TUNNEL_T tunnel_camera_to_encode;
-    memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
-
-    OMX_BUFFERHEADERTYPE *previewHeader;
 
     //INITIALIZE CAMERA STUFF
 
@@ -122,6 +118,7 @@ int main(int argc, char *argv[])
     long int num_bytes = 0;
     int previewWidth, previewHeight, previewFramerate;
     int captureWidth, captureHeight;
+    OMX_BUFFERHEADERTYPE *previewHeader;
 
     //handshake
     printf("sending handshake\n");
@@ -139,10 +136,13 @@ int main(int argc, char *argv[])
 
     printf("rcam_remote_slave recived values:\n");
     printf("preview %d x %d   framerate %d   ", previewWidth, previewHeight, previewFramerate);
-    printf("capture %d c %d\n", captureWidth, captureHeight);
+    printf("capture %d x %d\n", captureWidth, captureHeight);
 
     ////////////////////////////
     //initialize camera
+    printf("\n\n---initalize camera component---\n");
+    
+    
     ilclient_create_component(client,
                               &camera,
                               "camera",
@@ -151,9 +151,7 @@ int main(int argc, char *argv[])
 			      );
 
     //currently I am thinking the issue is this component setup
-    //the ilclient.c is in /opt/vc/src/hello_pi/libs/ilclient/
-    //it uses OMX calls which i belive I can understand and will have to experiment with
-    //and impement them on the ports directly
+    //I have confirmed that the issue is with ilclient not being able to set ports to both tunneled and manual
     
     printState(ilclient_get_handle(camera));
 
@@ -163,18 +161,20 @@ int main(int argc, char *argv[])
         fprintf(stderr, "unable to move camera component to Idle (1)");
         exit(EXIT_FAILURE);
     }
-    printState(ilclient_get_handle(camera));
+
 
     //defaults
     //set the capture resolution
     setCaptureRes(camera, captureWidth, captureHeight);
     //set default preview resolution
     setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
-
+    
     ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
     ilclient_enable_port(camera, 70);
+    
+    ilclient_enable_port_buffers(camera, 72, NULL, NULL, NULL);
+    // ilclient_enable_port(camera, 72);    //as an image port dont enable?
 
-    printState(ilclient_get_handle(camera));
 
     //change the camera state to executing
     OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
@@ -185,16 +185,18 @@ int main(int argc, char *argv[])
     }
     printState(ilclient_get_handle(camera));
 
+    printf("---end camera component setup---\n\n");
     
     ////////////////////////
     ////Initialize Image Encoder
-
+    printf("---initalize image_encode component---\n");
     
     
     ilclient_create_component(client,
 			      &image_encode,
 			      "image_encode",
 			      ILCLIENT_DISABLE_ALL_PORTS
+			      | ILCLIENT_ENABLE_INPUT_BUFFERS
 			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
 			      );
 
@@ -211,14 +213,11 @@ int main(int argc, char *argv[])
     ////////////////////////
     ////enable tunnel and image encode
 
+    ilclient_enable_port_buffers(image_encode, 340, NULL, NULL, NULL);
+    ilclient_enable_port(image_encode, 340);
+    
     ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
     ilclient_enable_port(image_encode, 341);
-
-    ilclient_disable_port_buffers(camera, 72, NULL, NULL, NULL);
-    ilclient_disable_port(camera, 72);
-    
-    set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
-    ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
 
     //change image_encode to executing
     OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
@@ -227,11 +226,11 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
 	exit(EXIT_FAILURE);
       }
-
-
-
     
-
+    printState(ilclient_get_handle(image_encode));
+    
+    printf("---end image_encode component setup---\n\n");
+    
     while(1)
       {
 	count++;
@@ -255,7 +254,6 @@ int main(int argc, char *argv[])
 	    printf("previewWidth = %d\n", previewWidth);
 	    printf("previewHeight = %d\n", previewHeight);
 	    printf("framerate = %d\n", previewFramerate);
-	    printf("wat!!\n");
 	    //pause component
 	    ilclient_change_component_state(camera, OMX_StatePause);
 	    printState(ilclient_get_handle(camera));
@@ -290,7 +288,72 @@ int main(int argc, char *argv[])
 	  {
 	    //2 options save locally
 	    printf("In rcam_remote_slave take photo\n");
-	    savePhoto(camera, image_encode, file_out2);
+	    
+	    OMX_ERRORTYPE OMXstatus;
+	    OMX_BUFFERHEADERTYPE *camera_capture_out, *decode_in, *decode_out;
+
+	    printf("capture started\n");
+
+	    // needed to notify camera component of image capture
+	    OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
+	    memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
+	    still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
+	    still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
+	    still_capture_in_progress.nPortIndex = 72;
+	    still_capture_in_progress.bEnabled = OMX_FALSE;
+
+	    //tell API port is taking picture - appears to be nessesery!
+	    still_capture_in_progress.bEnabled = OMX_TRUE;
+	    OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
+				      OMX_IndexConfigPortCapturing,
+				      &still_capture_in_progress);
+	    if (OMXstatus != OMX_ErrorNone)
+	      {
+		fprintf(stderr, "unable to set Config (1)\n");
+		exit(EXIT_FAILURE);
+	      }
+
+	    while(1)
+	      {
+		camera_capture_out = ilclient_get_output_buffer(camera, 72, 1/*blocking*/);
+		
+		
+		decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
+		printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
+		printf("decode_out bufferflags = %d\n", decode_out->nFlags);
+
+		if(decode_out->nFilledLen != 0)
+		  {
+		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+
+		  }
+		if(decode_out->nFlags == 1)
+		  {
+		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+		    OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
+		    break;
+		  }
+		//crashes if starts with 0 buffer?
+		OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
+	      }
+
+	    //tell API port is finished capture
+	    memset(&still_capture_in_progress, 0, sizeof(still_capture_in_progress));
+	    still_capture_in_progress.nVersion.nVersion = OMX_VERSION;
+	    still_capture_in_progress.nSize = sizeof(still_capture_in_progress);
+	    still_capture_in_progress.nPortIndex = 72;
+	    still_capture_in_progress.bEnabled = OMX_FALSE;
+
+	    OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
+				      OMX_IndexConfigPortCapturing,
+				      &still_capture_in_progress);
+	    if (OMXstatus != OMX_ErrorNone)
+	      {
+		fprintf(stderr, "unable to set Config (1)\n");
+		exit(EXIT_FAILURE);
+	      }
+
+	    printf("captureSaved\n");
 	    printf("save photo done\n");
 	    //current_command == NO_COMMAND;
 	    //or
