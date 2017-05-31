@@ -316,7 +316,13 @@ int main(int argc, char *argv[])
 	    while(1)
 	      {
 		camera_capture_out = ilclient_get_output_buffer(camera, 72, 1/*blocking*/);
+		OMX_EmptyThisBuffer(ilclient_get_handle(camera), camera_capture_out);
 		
+		//copy buffer DO camera_capture_out to decode_in
+		memcpy(camera_capture_out, decode_in, sizeof(camera_capture_out));
+		
+		decode_in = ilclient_get_input_buffer(image_encode, 340, 1/*blocking*/);
+		OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_in);
 		
 		decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
 		printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
@@ -324,12 +330,12 @@ int main(int argc, char *argv[])
 
 		if(decode_out->nFilledLen != 0)
 		  {
-		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out2);
 
 		  }
 		if(decode_out->nFlags == 1)
 		  {
-		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out);
+		    fwrite(decode_out->pBuffer, 1, decode_out->nFilledLen, file_out2);
 		    OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_out);
 		    break;
 		  }
