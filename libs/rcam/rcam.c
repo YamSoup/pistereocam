@@ -612,7 +612,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Parameter In setCaptureRes. Error = %s\n", err2str(OMXstatus));
 
-  /*
+  
   //print current config
   memset(&port_params, 0, sizeof(port_params));
   port_params.nVersion.nVersion = OMX_VERSION;
@@ -624,7 +624,7 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
     printf("Error Getting Parameter (2) In setCaptureRes. Error = %s\n", err2str(OMXstatus));
 
   print_OMX_PARAM_PORTDEFINITIONTYPE(port_params);
-  */
+  
 }
 
 

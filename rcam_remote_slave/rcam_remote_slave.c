@@ -51,7 +51,9 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 
 void error_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data);
 
+////////////////////////////////////////////////////////////////
 // MAIN
+////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[])
 {
     int count = 0;
@@ -60,11 +62,15 @@ int main(int argc, char *argv[])
     bool deliver_preview = false;
 
     ILCLIENT_T *client;
-    COMPONENT_T *camera = NULL, *image_encode = NULL;
+    COMPONENT_T *camera = NULL, *video_scheduler = NULL, *image_encode = NULL;
     OMX_ERRORTYPE OMXstatus;
 
+    TUNNEL_T tunnel_camera_to_scheduler, tunnel_camera_to_encode;
+    memset(&tunnel_camera_to_scheduler, 0, sizeof(tunnel_camera_to_scheduler));
+    memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
+
     FILE *file_out2;
-    file_out2 = fopen("rcam1", "wb");
+    file_out2 = fopen("remote_pic", "wb");
 
 
     //INITIALIZE CAMERA STUFF
@@ -147,11 +153,7 @@ int main(int argc, char *argv[])
                               &camera,
                               "camera",
                               ILCLIENT_DISABLE_ALL_PORTS
-			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
 			      );
-
-    //currently I am thinking the issue is this component setup
-    //I have confirmed that the issue is with ilclient not being able to set ports to both tunneled and manual
     
     printState(ilclient_get_handle(camera));
 
@@ -169,23 +171,23 @@ int main(int argc, char *argv[])
     //set default preview resolution
     setPreviewRes(camera, previewWidth, previewHeight, previewFramerate);
     
-    ilclient_enable_port_buffers(camera, 70, NULL, NULL, NULL);
-    ilclient_enable_port(camera, 70);
+    ////////////////////////
+    ////Initalize Video Scheduler
+    printf("---initalize video_scheduler component---");
     
-    ilclient_enable_port_buffers(camera, 72, NULL, NULL, NULL);
-    // ilclient_enable_port(camera, 72);    //as an image port dont enable?
-
-
-    //change the camera state to executing
-    OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
+    ilclient_create_component(client,
+			      &video_scheduler,
+			      "video_scheduler",
+			      ILCLIENT_DISABLE_ALL_PORTS
+			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
+			      );
+    
+    OMXstatus = ilclient_change_component_state(video_scheduler, OMX_StateIdle);
     if (OMXstatus != OMX_ErrorNone)
     {
-        fprintf(stderr, "unable to move camera component to Executing (1)\n");
+        fprintf(stderr, "unable to move scheduler component to Idle (1)");
         exit(EXIT_FAILURE);
     }
-    printState(ilclient_get_handle(camera));
-
-    printf("---end camera component setup---\n\n");
     
     ////////////////////////
     ////Initialize Image Encoder
@@ -195,8 +197,7 @@ int main(int argc, char *argv[])
     ilclient_create_component(client,
 			      &image_encode,
 			      "image_encode",
-			      ILCLIENT_DISABLE_ALL_PORTS
-			      | ILCLIENT_ENABLE_INPUT_BUFFERS
+			      ILCLIENT_DISABLE_ALL_PORTS			      
 			      | ILCLIENT_ENABLE_OUTPUT_BUFFERS
 			      );
 
@@ -211,25 +212,50 @@ int main(int argc, char *argv[])
     setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
 
     ////////////////////////
-    ////enable tunnel and image encode
-
-    ilclient_enable_port_buffers(image_encode, 340, NULL, NULL, NULL);
-    ilclient_enable_port(image_encode, 340);
+    ////enable tunnels
     
-    ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
-    ilclient_enable_port(image_encode, 341);
+    set_tunnel(&tunnel_camera_to_scheduler, camera, 70, video_scheduler, 10);
+    ilclient_setup_tunnel(&tunnel_camera_to_scheduler, 0, 0);
 
-    //change image_encode to executing
-    OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
+    // change camera to executing
+    OMXstatus = ilclient_change_component_state(camera, OMX_StateExecuting);
     if (OMXstatus != OMX_ErrorNone)
       {
-	fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
+	fprintf(stderr, "unable to move camera component to Executing (1)\n");
 	exit(EXIT_FAILURE);
       }
+
+    //enable port and buffers for video_scheduler
+    ilclient_enable_port_buffers(video_scheduler, 11, NULL, NULL, NULL);
+    ilclient_enable_port(video_scheduler, 11);
+
+    // change video scheduler to executing
+    OMXstatus = ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
+    if (OMXstatus != OMX_ErrorNone)
+      {
+	fprintf(stderr, "unable to move video_scheduler component to Executing (1)\n");
+	exit(EXIT_FAILURE);
+      }
+
     
-    printState(ilclient_get_handle(image_encode));
+  //enable port and buffers for output port of image encode
+  ilclient_enable_port_buffers(image_encode, 341, NULL, NULL, NULL);
+  ilclient_enable_port(image_encode, 341);
+  
+  //setup tunnel from camera image port too image encode
+  set_tunnel(&tunnel_camera_to_encode, camera, 72, image_encode, 340);
+  ilclient_setup_tunnel(&tunnel_camera_to_encode, 0, 0);
+
+  //change image_encode to executing
+  OMXstatus = ilclient_change_component_state(image_encode, OMX_StateExecuting);
+  if (OMXstatus != OMX_ErrorNone)
+    {
+      fprintf(stderr, "unable to move image_encode component to Executing (1) Error = %s\n", err2str(OMXstatus));
+      exit(EXIT_FAILURE);
+    }
+
+
     
-    printf("---end image_encode component setup---\n\n");
     
     while(1)
       {
@@ -313,15 +339,24 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	      }
 
+	    printf("enable capture port\n");
+	    ilclient_enable_port(camera, 72); 
+	    
 	    while(1)
 	      {
+		printf("in while loop \n");
+		printf(".get output buffer\n");
 		camera_capture_out = ilclient_get_output_buffer(camera, 72, 1/*blocking*/);
+		printf(".empty the buffer");
 		OMX_EmptyThisBuffer(ilclient_get_handle(camera), camera_capture_out);
 		
 		//copy buffer DO camera_capture_out to decode_in
+		printf(".memcpy\n");
 		memcpy(camera_capture_out, decode_in, sizeof(camera_capture_out));
-		
+
+		printf(".get input buffer");
 		decode_in = ilclient_get_input_buffer(image_encode, 340, 1/*blocking*/);
+		printf(".fill buffer");
 		OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_in);
 		
 		decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
@@ -359,6 +394,8 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	      }
 
+	    ilclient_disable_port(camera, 72); 	    
+
 	    printf("captureSaved\n");
 	    printf("save photo done\n");
 	    //current_command == NO_COMMAND;
@@ -378,9 +415,9 @@ int main(int argc, char *argv[])
 		//print state (to check its still executing
 		printState(ilclient_get_handle(camera));
 
-		//get buffer from camera		
-		OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(camera), previewHeader);
-		previewHeader = ilclient_get_output_buffer(camera, 70, 1);		
+		//get buffer from video_scheduler		
+		OMXstatus = OMX_FillThisBuffer(ilclient_get_handle(video_scheduler), previewHeader);
+		previewHeader = ilclient_get_output_buffer(video_scheduler, 11, 1);		
 		//send buffer, checks lengths to ensure all data is sent
 		printf("nAllocLen = %d\n", previewHeader->nAllocLen);
 		printf("sending buffer ... ");
