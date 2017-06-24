@@ -41,8 +41,8 @@ when no command is needed the main pi will send NO_COMMAND the commands will use
 #include "socket_helper.h"
 #include "rcam.h"
 
-#define IP_ADD "127.0.0.1" //loopback ip
-//#define IP_ADD "192.168.0.21"
+//#define IP_ADD "127.0.0.1" //loopback ip
+#define IP_ADD "192.168.0.21"
 #define SERV_PORT "8039"
 
 ////////////////////////////////////////////////////////////////
@@ -312,6 +312,11 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
+	    savePhoto(camera, image_encode, file_out2);
+	    //TODO close file and open next!
+	    
+	
+	    /* THIS WAS NOT WORKING BUT NOT PREPARED TO KILL IT QUITE YET
 	    //2 options save locally
 	    printf("In rcam_remote_slave take photo\n");
 	    
@@ -346,7 +351,7 @@ int main(int argc, char *argv[])
 	      {
 		printf("in while loop \n");
 		printf(".get output buffer\n");
-		camera_capture_out = ilclient_get_output_buffer(camera, 72, 1/*blocking*/);
+		camera_capture_out = ilclient_get_output_buffer(camera, 72, 1);
 		printf(".empty the buffer");
 		OMX_EmptyThisBuffer(ilclient_get_handle(camera), camera_capture_out);
 		
@@ -355,11 +360,11 @@ int main(int argc, char *argv[])
 		memcpy(camera_capture_out, decode_in, sizeof(camera_capture_out));
 
 		printf(".get input buffer");
-		decode_in = ilclient_get_input_buffer(image_encode, 340, 1/*blocking*/);
+		decode_in = ilclient_get_input_buffer(image_encode, 340, 1);
 		printf(".fill buffer");
 		OMX_FillThisBuffer(ilclient_get_handle(image_encode), decode_in);
 		
-		decode_out = ilclient_get_output_buffer(image_encode, 341, 1/*blocking*/);
+		decode_out = ilclient_get_output_buffer(image_encode, 341, 1);
 		printf("decode_out bytes = %d   :   ", decode_out->nFilledLen);
 		printf("decode_out bufferflags = %d\n", decode_out->nFlags);
 
@@ -403,6 +408,7 @@ int main(int argc, char *argv[])
 	    //store in a buffer
 	    //send size of buffer
 	    //send buffer
+	    */
 	  }
 	else if (current_command == END_REMOTE_CAM)
 	  {
