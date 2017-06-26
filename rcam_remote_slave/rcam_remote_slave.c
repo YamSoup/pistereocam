@@ -69,9 +69,6 @@ int main(int argc, char *argv[])
     memset(&tunnel_camera_to_scheduler, 0, sizeof(tunnel_camera_to_scheduler));
     memset(&tunnel_camera_to_encode, 0, sizeof(tunnel_camera_to_encode));
 
-    FILE *file_out2;
-    file_out2 = fopen("remote_pic", "wb");
-
 
     //INITIALIZE CAMERA STUFF
 
@@ -312,7 +309,7 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
-	    savePhoto(camera, image_encode, file_out2);
+	    savePhoto(camera, image_encode, "remote_photo");
 	    //TODO close file and open next!
 	    
 	
@@ -446,9 +443,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     printState(ilclient_get_handle(camera));
-
-    //destroy all components!!!
-    fclose(file_out2);
 
     printf("exiting remote_cam.c");
     return 0;

@@ -19,10 +19,15 @@ This is a test comment to see if git is working on windows
  */
 
 //untested
-int fileFindNext(char* filePrefix)
+// the idea is that the function takes in the filePrefix and a Helper number (the number we belive at that time is where the files are at)
+// and then the function checks if the filename (comination of filePrefix and  is available if not it increments until a filename is availble and then returns a long int of the current count
+// to be used as the next HelperNumber, if effiency is not needed it can be called with 0 for the helper number and the return value ignored
+// might replace this or add another fuction that spits out a name.
+
+unsigned int fileFindNext(char* filePrefix,unsigned int helperNumber)
 {
-  char currentFileName[31];
-  int count = 0;
+  char currentFileName[80];
+  unsigned int count = helperNumber;
   char countString[6];
   bool loop = true;
   while(loop)
@@ -31,9 +36,18 @@ int fileFindNext(char* filePrefix)
       strcpy(currentFileName, filePrefix);
       strcat(currentFileName, countString);
       if( access(currentFileName, F_OK) != -1)
-	{count++; continue;}
+	{
+	  if(count == 65535)
+	    {
+	      fprintf(stderr, "Error! end of useable numbers for filename");
+	      exit(EXIT_FAILURE);
+	    }
+	  count++; continue;
+	}
       else
+	{
 	return count;
+	}
     }
 }
 
@@ -50,9 +64,6 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   OMX_ERRORTYPE OMXstatus;
-
-  FILE *file_out1;
-  file_out1 = fopen("local_pic", "wb");
 
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
   memset(&tunnel_camera_to_render, 0, sizeof(tunnel_camera_to_render));
@@ -194,7 +205,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->takePhoto == true)
 	{
-	  savePhoto(camera, image_encode, file_out1);
+	  savePhoto(camera, image_encode, "local_photo");
 	  //TODO close file and open next!
 	  currentArgs->takePhoto = false;
 	}
@@ -214,9 +225,7 @@ void *initLocalCamera(void *VoidPtrArgs)
   ///////////////
   //CLEANUP
 
-  //close files
-  fclose(file_out1);
-
+  
   //Disable components
 
   //call pthread_exit so caller can join
@@ -849,12 +858,17 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 
 
 //in development
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *fileprefix)
 {
   printf("in savePhoto\n");
 
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
+
+  //needs to be changed to make use of fileprefix
+  // and to increment the file
+  FILE *file_out;
+  file_out = fopen("local_pic", "wb");
 
   printf("capture started\n");
 
@@ -916,6 +930,7 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out)
       exit(EXIT_FAILURE);
     }
 
+  fclose(file_out);
   printf("captureSaved\n");
 }
 

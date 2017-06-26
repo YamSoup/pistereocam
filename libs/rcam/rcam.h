@@ -79,6 +79,7 @@ struct cameraControl
   //display (renderer)
   bool displayChanged;
   enum displayTypes displayType;
+  
   //display size has been removed replaced with a function that places based on presets
   /*
   future implementations may change things like brightness etc
@@ -101,7 +102,7 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate);
 void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig);
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
 
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, FILE *file_out);
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char* fileprefix);
 
 //functions that manipulate the cameraControl struct that ultimatly controls the camera
 void deInit(struct cameraControl *toChange);
