@@ -13,43 +13,10 @@
 
 #define PORT "8039"
 
-/*
-working in camera.c still need to implement
-This is a test comment to see if git is working on windows
- */
-
-//untested
-// the idea is that the function takes in the filePrefix and a Helper number (the number we belive at that time is where the files are at)
-// and then the function checks if the filename (comination of filePrefix and  is available if not it increments until a filename is availble and then returns a long int of the current count
-// to be used as the next HelperNumber, if effiency is not needed it can be called with 0 for the helper number and the return value ignored
-// might replace this or add another fuction that spits out a name.
-
-unsigned int fileFindNext(char* filePrefix,unsigned int helperNumber)
-{
-  char currentFileName[80];
-  unsigned int count = helperNumber;
-  char countString[6];
-  bool loop = true;
-  while(loop)
-    {
-      sprintf(countString, "_%05d\n", count);
-      strcpy(currentFileName, filePrefix);
-      strcat(currentFileName, countString);
-      if( access(currentFileName, F_OK) != -1)
-	{
-	  if(count == 65535)
-	    {
-	      fprintf(stderr, "Error! end of useable numbers for filename");
-	      exit(EXIT_FAILURE);
-	    }
-	  count++; continue;
-	}
-      else
-	{
-	return count;
-	}
-    }
-}
+/////////////////////////////////////////////////////////////////////
+// initLocalCamera
+// This function starts a camera instance on the machine it is started on
+// The goal is to have the save API controls for the Local Camera and the Remote Camera
 
 void *initLocalCamera(void *VoidPtrArgs)
 {
@@ -205,8 +172,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->takePhoto == true)
 	{
-	  savePhoto(camera, image_encode, "local_photo");
-	  //TODO close file and open next!
+	  savePhoto(camera, image_encode, "local_photo\n");	  
 	  currentArgs->takePhoto = false;
 	}
       //loop termination
@@ -216,21 +182,16 @@ void *initLocalCamera(void *VoidPtrArgs)
 	  pthread_mutex_unlock(&currentArgs->mutexPtr);
 	  break;
 	}
-
       pthread_mutex_unlock(&currentArgs->mutexPtr);
-      //try below to avoid busy wait
-      //usleep(500);
     }
 
   ///////////////
   //CLEANUP
-
   
   //Disable components
 
   //call pthread_exit so caller can join
   pthread_exit(NULL);
-
 }
 
 
@@ -240,22 +201,15 @@ remote camera
 *********************************************
 This function creates a renderer on the server and comunicates with rcam client program to
 display a preview until stopped
-Somehow needs to take a photo as well?
+The commands are comunicated between the programs with the enum rcam_command
 
 Idea for camera capture on rcam
 Create a buffer large enough to hold the biggest image possible and an int for the size of the final buffer
 Transfer the whole image when it is finished
 This will get over the issue of having to wait for the flag to tell when the process has stopped !
 
-as a function that needs to be a thread this can only have 1 argument
-and so will need a pointer to a struct containing all the needed parameters.
-the struct should go into a header.
-
-also a "global variable" will be needed to control the camera and mutex to control the the variable from both sides
-either that or possibly a semephore to control the state
-
-The display type selects if the preview runs full screen. or on the left or right side of a side by side.
 */
+
 void *initServerRcam(void *VoidPtrArgs)
 {
   struct cameraControl *currentArgs = VoidPtrArgs;
@@ -265,7 +219,7 @@ void *initServerRcam(void *VoidPtrArgs)
   pthread_mutex_unlock(&currentArgs->mutexPtr);
 
   ///////////////////////////////////////////
-  ////Variables
+  // Variables
 
   COMPONENT_T *client_video_render = NULL;
   OMX_ERRORTYPE OMXstatus;
@@ -280,16 +234,6 @@ void *initServerRcam(void *VoidPtrArgs)
 
   enum rcam_command rcam_command = NO_COMMAND;
 
-  /////////////////////////////////////////////////////////////////
-  // SOCKET STUFF
-
-  printf("start of socket stuff in rcam\n");
-
-  int socket_fd = 0, client_socket_fd = 0;
-
-  socket_fd = getAndBindTCPServerSocket(PORT);
-  printf("waiting for remotecam to connect\n");
-  client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
 
   ///////////////////////////////////////////
   ////Initialise client video render
@@ -362,6 +306,18 @@ void *initServerRcam(void *VoidPtrArgs)
   //set the position on the screen
   setRenderConfig(client_video_render, currentArgs->displayType);
 
+  /////////////////////////////////////////////////////////////////
+  // SOCKET STUFF
+
+  printf("start of socket stuff in rcam\n");
+
+  int socket_fd = 0, client_socket_fd = 0;
+
+  socket_fd = getAndBindTCPServerSocket(PORT);
+  printf("waiting for remotecam to connect\n");
+  client_socket_fd = listenAndAcceptTCPServerSocket(socket_fd, 10/*backlog*/);
+
+  
   ////////////////////////////////////////////////////////////
   // INITIATE RCAM_REMOTE_SLAVE
 
@@ -381,14 +337,11 @@ void *initServerRcam(void *VoidPtrArgs)
   write(client_socket_fd, &currentArgs->photoWidth, sizeof(currentArgs->photoWidth));
   write(client_socket_fd, &currentArgs->photoHeight, sizeof(currentArgs->photoHeight));
 
-
-
   pthread_mutex_unlock(&currentArgs->mutexPtr);
 
   ////////////////////////////////////////////////////////////
   //// Main Thread Loop
 
-  
   void * preview_buffer;
   preview_buffer = malloc(render_params.nBufferSize + 1 );
   printf("***preview nBufferSize = %d\n", render_params.nBufferSize);
@@ -412,14 +365,13 @@ void *initServerRcam(void *VoidPtrArgs)
 
 
   int count = 500;
-  //modify to inifinate loop when control functions are writen
   while(1)
     {
       pthread_mutex_lock(&currentArgs->mutexPtr);
 
       if (currentArgs->previewChanged == true)
 	{
-	  printf("in previewChanged !\n");
+	  printf("In previewChanged\n");
 	  //needs to:
 	  //change the renderer params this side
 	  OMXstatus = ilclient_change_component_state(client_video_render, OMX_StateIdle);
@@ -519,7 +471,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  current_command = END_REMOTE_CAM;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
   	  printf("END_REMOTE_CAM sent\n");
-	  break; //exits while loop
+	  break; //exits loop and ultimatly ends this pthread
 	}
       else
 	{
@@ -528,8 +480,8 @@ void *initServerRcam(void *VoidPtrArgs)
 	  current_command = NO_COMMAND;
 	  write(client_socket_fd, &current_command, sizeof(current_command));
 
-	  printf("get a buffer to process\n");
-	  printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
+	  //printf("get a buffer to process\n");
+	  //printf("waiting to recv buffer of size %d... ", render_params.nBufferSize);
 	  num_bytes = read(client_socket_fd,
 			   preview_buffer,
 			   render_params.nBufferSize);
@@ -539,22 +491,21 @@ void *initServerRcam(void *VoidPtrArgs)
 				preview_buffer + num_bytes,
 				render_params.nBufferSize - num_bytes);
 	    }
-	  printf("buffer recived, recived %ld bytes\n", num_bytes);
+	  //printf("buffer recived, recived %ld bytes\n", num_bytes);
 
 	  //change nAllocLen in bufferheader
 	  client_video_render_in = ilclient_get_input_buffer(client_video_render, 90, 1);
 	  memcpy(client_video_render_in->pBuffer, preview_buffer, render_params.nBufferSize);
-	  printf("copied buffer form preview_buffer into client_video_render_in\n");
-	  //fix alloc len
+	  //printf("copied buffer form preview_buffer into client_video_render_in\n");
 	  client_video_render_in->nFilledLen = render_params.nBufferSize;
 
 	  //empty buffer into render component
 	  OMX_EmptyThisBuffer(ilclient_get_handle(client_video_render), client_video_render_in);
 	  count++;
-	  printf("Emptied buffer --- count = %d\n", count);
+	  //printf("Emptied buffer --- count = %d\n", count);
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
-      usleep(500);
+      //usleep(500); remove?
     }
 
   ////////////////////////////////////////////////////////////
@@ -578,7 +529,7 @@ void *initServerRcam(void *VoidPtrArgs)
 //NOTE: super special function only works after bcm_host_init() and possibly others
 struct screenSizeStruct returnScreenSize(void)
 {
-  //currently very broken
+  //currently very broken? check
   struct screenSizeStruct currentScreenSize;
   uint32_t currentScreenWidth = 0;
   uint32_t currentScreenHeight = 0;
@@ -815,6 +766,7 @@ void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenCo
 // WEIRDLY ONLY ACCEPTS JPEG?
 // THE CAMERA REFUSES TO OUTPUT ANYTHING BUT YUV
 // THIS COMPNENT WILL ONLY SAVE TO JPEG WHEN YUV IS THE INPUT :(
+// possibly add another component to rectify?
 
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 {
@@ -856,23 +808,54 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
     printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
 }
 
+///////////////////////////////////////////////////////
+//takes file prefix and returns a next suggested file name (sequential numbers)
+//attempts to optomise with a static count so will not need to start at 0
+//doing this as i'm expecting the numbers to get quite large
+char* fileFindNext(char* filePrefix)
+{
+  static char currentFileName[255];  
+  static unsigned int count; //woried about this with multiple instances of cameras
+  char countString[6];
+  
+  while(1)
+    {     
+      sprintf(countString, "_%05d\n", count);
+      strcpy(currentFileName, filePrefix);
+      strcat(currentFileName, countString);
+      strcat(currentFileName, '\0');
+      if( access(currentFileName, F_OK) != -1)
+	{
+	  if(count == 65535)
+	    {
+	      fprintf(stderr, "Error! end of useable numbers for the filePrefix");
+	      exit(EXIT_FAILURE);
+	    }
+	  count++; continue;
+	}
+      else
+	{
+	  return (char*)&currentFileName;
+	}
+    }
+}
 
-//in development
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *fileprefix)
+/////////////////////////////////////////////////////////
+// savePhoto() saves a photo locally
+// needs to be passed camera component and image_encode component
+// because it has to directly manipulate the ports on both
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *filePrefix)
 {
   printf("in savePhoto\n");
 
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
 
-  //needs to be changed to make use of fileprefix
-  // and to increment the file
-  FILE *file_out;
-  file_out = fopen("local_pic", "wb");
-
+  FILE *file_out;  
+  file_out = fopen(fileFindNext(filePrefix), "wb");
+  //check file?
+  
   printf("capture started\n");
-
-
   
   // needed to notify camera component of image capture
   OMX_CONFIG_PORTBOOLEANTYPE still_capture_in_progress;
@@ -882,7 +865,7 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *fileprefix)
   still_capture_in_progress.nPortIndex = 72;
   still_capture_in_progress.bEnabled = OMX_FALSE;
 
-  //tell API port is taking picture - appears to be nessesery!
+  //tell camera component port is taking picture - appears to be nessesery!
   still_capture_in_progress.bEnabled = OMX_TRUE;
   OMXstatus = OMX_SetConfig(ilclient_get_handle(camera),
 			       OMX_IndexConfigPortCapturing,
