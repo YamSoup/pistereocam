@@ -172,7 +172,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->takePhoto == true)
 	{
-	  savePhoto(camera, image_encode, "local_photo\n");	  
+	  savePhoto(camera, image_encode, "/home/pi/Desktop/local_photo");	  
 	  currentArgs->takePhoto = false;
 	}
       //loop termination
@@ -814,16 +814,17 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 //doing this as i'm expecting the numbers to get quite large
 char* fileFindNext(char* filePrefix)
 {
+  //needs to be static as a pointer to this memory is passed back
   static char currentFileName[255];  
-  static unsigned int count; //woried about this with multiple instances of cameras
-  char countString[6];
-  
+  static unsigned int count = 0; //woried about this static with multiple instances of cameras
+  char countString[5];
+
   while(1)
     {     
-      sprintf(countString, "_%05d\n", count);
+      sprintf(countString, "_%05d", count);
       strcpy(currentFileName, filePrefix);
       strcat(currentFileName, countString);
-      strcat(currentFileName, '\0');
+      //strcat(currentFileName, "\0");
       if( access(currentFileName, F_OK) != -1)
 	{
 	  if(count == 65535)
@@ -831,13 +832,16 @@ char* fileFindNext(char* filePrefix)
 	      fprintf(stderr, "Error! end of useable numbers for the filePrefix");
 	      exit(EXIT_FAILURE);
 	    }
-	  count++; continue;
+	  count++;
+	  continue;
 	}
       else
 	{
-	  return (char*)&currentFileName;
+	  printf("in fileFindNext: %s\n", currentFileName);
+	  return currentFileName;
 	}
     }
+    
 }
 
 /////////////////////////////////////////////////////////
@@ -850,8 +854,10 @@ void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *filePrefix)
 
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
-
-  FILE *file_out;  
+  printf("%s\n", filePrefix);
+  printf("%s\n", fileFindNext(filePrefix));
+  
+  FILE *file_out;
   file_out = fopen(fileFindNext(filePrefix), "wb");
   //check file?
   
