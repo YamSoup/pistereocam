@@ -36,4 +36,13 @@ void print_OMX_IMAGE_PORTDEFINITIONTYPE(OMX_IMAGE_PORTDEFINITIONTYPE image);
 void print_OMX_PARAM_PORTDEFINITIONTYPE(OMX_PARAM_PORTDEFINITIONTYPE params);
 void print_OMX_IMAGE_PARAM_PORTFORMATTYPE(OMX_IMAGE_PARAM_PORTFORMATTYPE image_params);
 
+//**************************************************************
+// Stuff from Raspberry Pi GPU Audio Video Programming, Jan Newmarch
+//**************************************************************
+
+//prints available components (not used components)
+void print_OMX_component_list();
+//this might be the same as print_OMX_PARAM_PORTDEFINITIONTYPE
+void print_OMX_port_information(OMX_PARAM_PORTDEFINITIONTYPE *portdef);
+
 #endif /* _PRINT_OMX_H */

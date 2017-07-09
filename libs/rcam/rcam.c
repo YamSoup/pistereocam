@@ -772,7 +772,7 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 {
   printf("in setParamImageFormat\n");
   OMX_ERRORTYPE OMXstatus;
-
+  
   //image format stucture */
   OMX_IMAGE_PARAM_PORTFORMATTYPE image_format;
   memset(&image_format, 0, sizeof(image_format));
@@ -802,10 +802,25 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
       if(OMXstatus != OMX_ErrorNone)
 	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
     }
-
+  /*
+  if(formatType == TIFF)
+    {
+      image_format.nIndex = 0;
+      image_format.eCompressionFormat = OMX_IMAGE_CodingTIFF;
+      image_format.eColorFormat = OMX_COLOR_FormatUnused;
+    }
+  */
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
+
+  // print the resultant format
+
+    OMXstatus = OMX_GetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
+  if(OMXstatus != OMX_ErrorNone)
+    printf("Error Getting Paramter Error = %s\n", err2str(OMXstatus));
+
+  print_OMX_IMAGE_PARAM_PORTFORMATTYPE(image_format);
 }
 
 ///////////////////////////////////////////////////////
