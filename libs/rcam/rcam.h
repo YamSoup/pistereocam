@@ -48,8 +48,8 @@ enum formatType
 {
   JPEG_HIGH_FORMAT = 1,
   JPEG_MEDIUM_FORMAT = 2,
-  JPEG_LOW_FORMAT = 3//,
-  //TIFF = 4
+  JPEG_LOW_FORMAT = 3,
+  PNG = 4
 };
 
 //used for returnScreenSize

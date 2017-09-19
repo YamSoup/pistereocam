@@ -99,7 +99,7 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
 
   //image format Param set
-  setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
+  setParamImageFormat(image_encode, PNG);
 
   ////////////////////
   // enable components and tunnels
@@ -802,14 +802,13 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
       if(OMXstatus != OMX_ErrorNone)
 	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
     }
-  /*
-  if(formatType == TIFF)
+  if(formatType == PNG)
     {
       image_format.nIndex = 0;
-      image_format.eCompressionFormat = OMX_IMAGE_CodingTIFF;
-      image_format.eColorFormat = OMX_COLOR_FormatUnused;
+      image_format.eCompressionFormat = OMX_IMAGE_CodingPNG;
+      //image_format.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
     }
-  */
+  
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
   if(OMXstatus != OMX_ErrorNone)
     printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
