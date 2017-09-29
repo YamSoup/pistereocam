@@ -358,7 +358,7 @@ void print_OMX_VIDEO_PORTDEFINITIONTYPE(OMX_VIDEO_PORTDEFINITIONTYPE video)
     printf("   video.bFlagErrorConcealment = ");
     video.bFlagErrorConcealment ? printf("true\n") : printf("false\n");
     printf("   video.eCompressionFormat = ");
-    print_OMX_COLOR_FORMATTYPE(video.eCompressionFormat);
+    print_OMX_VIDEO_CODINGTYPE(video.eCompressionFormat);
     printf("   video.eColorFormat = ");
     print_OMX_COLOR_FORMATTYPE(video.eColorFormat);
     printf("   video.pNativeWindow = %d\n", (int)video.pNativeWindow);

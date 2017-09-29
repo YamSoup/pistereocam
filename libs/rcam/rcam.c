@@ -99,7 +99,7 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
 
   //image format Param set
-  setParamImageFormat(image_encode, PNG);
+  setParamImageFormat(image_encode, PNG_FORMAT);
 
   ////////////////////
   // enable components and tunnels
@@ -567,6 +567,8 @@ void setCaptureRes(COMPONENT_T *camera, int width, int height)
   //this does not work :( camera seams only to output YUV
   //port_params.format.image.eColorFormat = OMX_COLOR_Format32bitABGR8888;
 
+  port_params.format.image.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  
   //set changes
   OMXstatus = OMX_SetParameter(ilclient_get_handle(camera), OMX_IndexParamPortDefinition, &port_params);
   if(OMXstatus != OMX_ErrorNone)
@@ -802,11 +804,10 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
       if(OMXstatus != OMX_ErrorNone)
 	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
     }
-  if(formatType == PNG)
+  if(formatType == PNG_FORMAT)
     {
-      image_format.nIndex = 0;
+      //image_format.nIndex = 0;
       image_format.eCompressionFormat = OMX_IMAGE_CodingPNG;
-      //image_format.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
     }
   
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
