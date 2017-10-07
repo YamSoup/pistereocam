@@ -30,6 +30,7 @@ void *initLocalCamera(void *VoidPtrArgs)
   //VARIABLES
 
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
+  COMPONENT_T *component_list[3] = {camera, video_render, image_encode};
   OMX_ERRORTYPE OMXstatus;
 
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
@@ -99,7 +100,7 @@ void *initLocalCamera(void *VoidPtrArgs)
     }
 
   //image format Param set
-  setParamImageFormat(image_encode, PNG_FORMAT);
+  setParamImageFormat(image_encode, JPEG_HIGH_FORMAT);
 
   ////////////////////
   // enable components and tunnels
@@ -149,6 +150,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       if (currentArgs->previewChanged == true)
 	{
 	  ilclient_disable_tunnel(&tunnel_camera_to_render);
+	  //ilclient_flush_tunnels(&tunnel_camera_to_render, 1 //?assuming for 1 tunnel);
 	  OMXstatus = ilclient_change_component_state(camera, OMX_StatePause);
 	  setPreviewRes(camera,
 			currentArgs->previewWidth,
@@ -178,8 +180,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       //loop termination
       else if (currentArgs->rcamDeInit == true)
 	{
-	  printf("end\n");
-	  pthread_mutex_unlock(&currentArgs->mutexPtr);
+	  printf("~~~~~ End local camera ~~~~~\n");
 	  break;
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
@@ -187,9 +188,23 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   ///////////////
   //CLEANUP
-  
-  //Disable components
 
+  // Teardown tunnels
+  ilclient_disable_tunnel(&tunnel_camera_to_render);
+  ilclient_disable_tunnel(&tunnel_camera_to_encode);
+  
+  ilclient_teardown_tunnels(&tunnel_camera_to_render);
+  ilclient_teardown_tunnels(&tunnel_camera_to_encode);
+  
+  // Disable components
+  ilclient_cleanup_components(component_list);
+
+  //Destroy ilclient
+  ilclient_destroy(currentArgs->client);
+
+  //unlock mutex before teminating
+  pthread_mutex_unlock(&currentArgs->mutexPtr);
+    
   //call pthread_exit so caller can join
   pthread_exit(NULL);
 }
@@ -509,7 +524,7 @@ void *initServerRcam(void *VoidPtrArgs)
     }
 
   ////////////////////////////////////////////////////////////
-  //// end of thread Cleanup
+  //// end of thread, Cleanup
 
   //free buffer memory
   free(preview_buffer);
@@ -803,11 +818,6 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
       OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamQFactor, &compression_format);
       if(OMXstatus != OMX_ErrorNone)
 	printf("Error Setting Paramter Error = %s\n", err2str(OMXstatus));
-    }
-  if(formatType == PNG_FORMAT)
-    {
-      //image_format.nIndex = 0;
-      image_format.eCompressionFormat = OMX_IMAGE_CodingPNG;
     }
   
   OMXstatus = OMX_SetParameter(ilclient_get_handle(image_encode), OMX_IndexParamImagePortFormat, &image_format);
