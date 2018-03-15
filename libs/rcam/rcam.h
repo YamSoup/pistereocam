@@ -98,6 +98,8 @@ void *initServerRcam(void *VoidPtrArgs);
 struct screenSizeStruct returnScreenSize(void);
 
 void setCaptureRes(COMPONENT_T *camera, int width, int height);
+void setCaptureRes2(COMPONENT_T *camera, int width, int height);
+
 void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate);
 void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig);
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);

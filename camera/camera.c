@@ -98,17 +98,24 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  sleep(5);
+  sleep(2);
   //////////////////////////////////////////////////////
   //       !!!!!!!!!!!!
   //need functions to change the structure like remote.c
   printf("in main\n");
   printf("screen width = %d\nscreen height = %d\n", screenSize.width, screenSize.height);
-  changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
-  sleep(5);
+  //  changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
+  //sleep(1);
+  changePreviewRes(&cameraControl, screenSize.width, screenSize.height, 20);
   
-  //  changeCaptureRes(&cameraControl, 640, 480);
+  
+
   takePhoto(&cameraControl);
+  sleep(1);
+  changeCaptureRes(&cameraControl, 800, 600);
+  sleep(2);  
+  takePhoto(&cameraControl);
+  sleep (3);
   
   deInit(&cameraControl);
   
