@@ -21,7 +21,7 @@ MY_LIBS =
 LDFLAGS =  $(DMX_LIBS) $(EGL_LIBS) $(OMX_LIBS) $(OMX_ILCLIENT_LIBS) $(MY_LIBS)
 
 camera : camera.o
-	cc -o camera camera.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o
+	cc -o camera camera.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o 
 
 camera.o : camera.c
 	cc -c camera.c $(CFLAGS)

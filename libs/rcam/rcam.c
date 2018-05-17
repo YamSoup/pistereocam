@@ -31,7 +31,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 
   COMPONENT_T *camera = NULL, *video_render = NULL, *image_encode = NULL;
   COMPONENT_T *component_list[3] = {camera, video_render, image_encode};
-  COMPONENT_T *image_encode_list[1] = {image_encode}; //needed to dedtroy component?
+  COMPONENT_T *image_encode_list[1] = {image_encode}; //needed to destroy component?
   OMX_ERRORTYPE OMXstatus;
 
   TUNNEL_T tunnel_camera_to_render, tunnel_camera_to_encode;
@@ -163,11 +163,12 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->photoChanged == true)
 	{
-	  //WORKING?
-	  TUNNEL_T *tunnel_ptr = &tunnel_camera_to_encode;
+	  //NOT WORKING?
+	  //TUNNEL_T *tunnel_ptr = &tunnel_camera_to_encode;
 	  ilclient_disable_tunnel(&tunnel_camera_to_encode);
-	  ilclient_teardown_tunnels(tunnel_ptr);
-	  printf("teardown done");
+	  ilclient_flush_tunnels(&tunnel_camera_to_encode, 30);
+	  //ilclient_teardown_tunnels(&tunnel_camera_to_encode);
+	  //printf("teardown done");
 	  setCaptureRes(camera, currentArgs->photoWidth, currentArgs->photoHeight);
 	  // DESTROY image encode and recreate (appears to be the only way)
 	  //destory

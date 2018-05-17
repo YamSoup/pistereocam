@@ -1,34 +1,8 @@
-// COMPILE WITH
-// gcc -o button button.c -g -DRASPBERRY_PI -DOMX_SKIP64BIT -pthread -lwiringPi
-// needs pthread and lwiringPi
-
-// an  example of an button using an interupt, perfect for the camera
-#include <wiringPi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <pthread.h>
-
-#define PIN_NUM 0
-#define button_up false
-#define button_down true
-#define EXITCOUNTLIMIT 10
-
-  //a struct for button data to be used in main loop of camera eventually
-  struct buttonControl
-  {
-    pthread_mutex_t mutexPtr;
-    bool buttonState;
-    bool takePhoto;
-    int exitCount;
-    bool exitCountReached;
-  } buttonControl;
-  //remember to set sruct values to 0
+// check below is correct
+#include "one_button_api.h"
 
 
+//only one function but pretty powerful
 void *myButtonPoll(void *voidButtonControl)
 {
   struct buttonControl *buttonControl = voidButtonControl;
@@ -72,15 +46,9 @@ void *myButtonPoll(void *voidButtonControl)
     //this usleep happens between the bitshift operator
     usleep(200); 
   }
-} 
+}
 
-
-//use a mutex to control the camera
-//with a count that goes up every down button detected but is reset when the button is lifted
-//to take pictures and if over a value to close the program
-// dont forget to lock mutex in main loop when checking the value
-// and in the button thread when changing value
-
+/* USE EXAMPLE
 int main (void)
 {
   int result = 0;
@@ -127,3 +95,4 @@ int main (void)
   return 0;
 }
 
+*/

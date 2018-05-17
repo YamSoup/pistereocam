@@ -8,6 +8,9 @@ echo "*** socket_helper ***"
 make -B -C libs/socket_helper
 echo "*** rcam ***"
 make -B -C libs/rcam
+echo "*** one_button_api ***"
+make -B -C libs/one_button_api
+
 
 echo "\n***** rcam_remote_slave *****"
 make -B -C rcam_remote_slave

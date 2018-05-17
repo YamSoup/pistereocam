@@ -105,18 +105,22 @@ int main(int argc, char *argv[])
   printf("in main\n");
   printf("screen width = %d\nscreen height = %d\n", screenSize.width, screenSize.height);
   //  changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
-  //sleep(1);
-  changePreviewRes(&cameraControl, screenSize.width, screenSize.height, 20);
+  sleep(2);
+  //changePreviewRes(&cameraControl, screenSize.width, screenSize.height, 20);
   
   
 
   takePhoto(&cameraControl);
-  sleep(1);
-  changeCaptureRes(&cameraControl, 800, 600);
-  sleep(2);  
+  usleep(2000);
   takePhoto(&cameraControl);
-  sleep (3);
-  
+  usleep(2000);
+  takePhoto(&cameraControl);
+  sleep(5);
+  takePhoto(&cameraControl);
+  usleep(2000);
+  takePhoto(&cameraControl);
+  sleep (5);
+    
   deInit(&cameraControl);
   
   // wait for the thread to complete
