@@ -13,6 +13,11 @@
     http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___index_8h.html
 */
 
+//stuff for the one_button_api
+#include <wiringPi.h>
+#include <stdint.h>
+#include "one_button_api.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -206,20 +211,56 @@ int main(int argc, char *argv[])
       printf("ERROR creating rcam thread, error = %d\n", result);
       exit(EXIT_FAILURE);
     }
-  
-  
-  //sleep for 2 secs
-  usleep(2000000);
-  takePhoto(&cameraControl);
-  takePhoto(&localCameraControl);
-  usleep(10000);
 
+  sleep(2);
+
+  //button stuff
+  result = 0;
+  pthread_t button_id;
   
+  memset(&buttonControl, 0, sizeof buttonControl);
+  pthread_mutex_init(&buttonControl.mutexPtr, NULL);
+  
+  result = wiringPiSetup();
+  printf("WiringPi result = %d\n", result);  
+  
+  pinMode(PIN_NUM, INPUT);
+  pullUpDnControl(PIN_NUM, PUD_UP);
+  
+  result = pthread_create(&button_id, NULL, myButtonPoll, (void*)&buttonControl);
+  printf("button_id thread result = %d\n", result);
+  
+  printf("pre main loop\n\n");
+  while(1)
+    {
+      pthread_mutex_lock(&buttonControl.mutexPtr);
+      if (buttonControl.takePhoto == true)
+	{
+	  printf("take photo\n");
+	  takePhoto(&cameraControl);
+	  takePhoto(&localCameraControl);
+	  buttonControl.takePhoto = false;
+	  usleep(2000);
+	}
+      if (buttonControl.exitCountReached == true)
+	{
+	  printf("exiting\n"); break;
+	}
+      
+      
+      //do stuff
+      pthread_mutex_unlock(&buttonControl.mutexPtr);
+      usleep(400);
+      
+    }
+
+    
   deInit(&localCameraControl);
   deInit(&cameraControl);
   pthread_join(localCamThreadID, NULL);
   pthread_join(RcamThreadid, NULL);
 
+  pthread_join(button_id, NULL);
   /////////////////////////////////////////////////////////////////
   //CLEANUP
   /////////////////////////////////////////////////////////////////

@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
-
+#include "one_button_api.h"
 
 //pree button headers
 #include <stdio.h>
@@ -31,7 +31,7 @@
 
 #include "bcm_host.h"
 #include "ilclient.h"
-#include "one_button_api.h" //apart from this one
+
 
 #include "rcam.h"
 

@@ -561,7 +561,7 @@ void *initServerRcam(void *VoidPtrArgs)
 	  //printf("Emptied buffer --- count = %d\n", count);
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
-      //usleep(500); remove?
+      usleep(500);
     }
 
   ////////////////////////////////////////////////////////////
