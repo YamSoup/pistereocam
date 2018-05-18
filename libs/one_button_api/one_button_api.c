@@ -37,15 +37,21 @@ void *myButtonPoll(void *voidButtonControl)
       usleep(200000);
     }
     if (buttonControl->exitCount > EXITCOUNTLIMIT)
-      buttonControl->exitCountReached = true;
+      {buttonControl->exitCountReached = true;
+	break;}
     
     state = state << 1; //bitshift state 1 (VERY important)
 
     pthread_mutex_unlock(&buttonControl->mutexPtr);
     //usleep needed (belive the debounce is so bad multiple detections still happen)
     //this usleep happens between the bitshift operator
-    usleep(200); 
+    usleep(400); 
   }
+    //unlock mutex before teminating
+  pthread_mutex_unlock(&buttonControl->mutexPtr);
+    
+  //call pthread_exit so caller can join
+  pthread_exit(NULL);
 }
 
 /* USE EXAMPLE

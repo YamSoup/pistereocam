@@ -14,14 +14,24 @@
 
     POSSIBLY USE WAIT() to avoid a busy wait.
   */
+//stuff for the one_button_api
+#include <wiringPi.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <pthread.h>
 
+
+//pree button headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
+
 #include "bcm_host.h"
 #include "ilclient.h"
+#include "one_button_api.h" //apart from this one
 
 #include "rcam.h"
 
@@ -105,25 +115,56 @@ int main(int argc, char *argv[])
   printf("in main\n");
   printf("screen width = %d\nscreen height = %d\n", screenSize.width, screenSize.height);
   //  changePreviewRes(&cameraControl, screenSize.width/2, (int)((float)(screenSize.width/2)*0.75), 30);
-  sleep(2);
+  //sleep(2);
   //changePreviewRes(&cameraControl, screenSize.width, screenSize.height, 20);
-  
-  
 
-  takePhoto(&cameraControl);
-  usleep(2000);
-  takePhoto(&cameraControl);
-  usleep(2000);
-  takePhoto(&cameraControl);
-  sleep(5);
-  takePhoto(&cameraControl);
-  usleep(2000);
-  takePhoto(&cameraControl);
-  sleep (5);
+
+
+  //button stuff
+  int result = 0;
+  pthread_t button_id;
+  
+  memset(&buttonControl, 0, sizeof buttonControl);
+  pthread_mutex_init(&buttonControl.mutexPtr, NULL);
+  
+  result = wiringPiSetup();
+  printf("WiringPi result = %d\n", result);  
+  
+  pinMode(PIN_NUM, INPUT);
+  pullUpDnControl(PIN_NUM, PUD_UP);
+  
+  result = pthread_create(&button_id, NULL, myButtonPoll, (void*)&buttonControl);
+  printf("button_id thread result = %d\n", result);
+  
+  printf("pre main loop\n\n");
+  while(1)
+    {
+      pthread_mutex_lock(&buttonControl.mutexPtr);
+      if (buttonControl.takePhoto == true)
+	{
+	  printf("take photo\n");
+	  takePhoto(&cameraControl);
+	  //usleep(2000);
+	  buttonControl.takePhoto = false;
+	}
+      if (buttonControl.exitCountReached == true)
+	{
+	  printf("exiting\n"); break;
+	}
+      
+      
+      //do stuff
+      pthread_mutex_unlock(&buttonControl.mutexPtr);
+      usleep(400);
+      
+    }
     
   deInit(&cameraControl);
   
   // wait for the thread to complete
+  printf("join button_id thread\n");
+  pthread_join(button_id, NULL);
+  printf("join thread_id thread\n");
   pthread_join(threadid, NULL);
 
   // OMX drinit
@@ -131,6 +172,7 @@ int main(int argc, char *argv[])
   // destroy client
   ilclient_destroy(client);
 
+  printf("\nexit success\n");
   return 0;
 }
 

@@ -3,7 +3,7 @@ EGL_INC =
 OMX_INC =  -I /opt/vc/include/IL
 OMX_ILCLIENT_INC = -I/opt/vc/src/hello_pi/libs/ilclient
 
-MY_INC = -I ../libs/print_OMX/ -I ../libs/socket_helper/ -I ../libs/rcam/
+MY_INC = -I ../libs/print_OMX/ -I ../libs/socket_helper/ -I ../libs/rcam/ -I ../libs/one_button_api/
 
 INCLUDES = $(DMX_INC) $(EGL_INC) $(OMX_INC) $(OMX_ILCLIENT_INC) $(MY_INC)
 
@@ -16,12 +16,12 @@ OMX_LIBS = -lopenmaxil
 OMX_ILCLIENT_LIBS = -L/opt/vc/src/hello_pi/libs/ilclient -lilclient
 #possibly eventally creat my of liabries out of the .o
 #(using ar libares must be in the format lib*.a then added like ilclient above currently they are just)
-MY_LIBS = 
+MY_LIBS = -lwiringPi
 
 LDFLAGS =  $(DMX_LIBS) $(EGL_LIBS) $(OMX_LIBS) $(OMX_ILCLIENT_LIBS) $(MY_LIBS)
 
 camera : camera.o
-	cc -o camera camera.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o 
+	cc -o camera camera.o $(LDFLAGS) ../libs/print_OMX/print_OMX.o ../libs/socket_helper/socket_helper.o ../libs/rcam/rcam.o ../libs/one_button_api/one_button_api.o
 
 camera.o : camera.c
 	cc -c camera.c $(CFLAGS)
