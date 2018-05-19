@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 	  printf("take photo\n");
 	  takePhoto(&cameraControl);
 	  takePhoto(&localCameraControl);
-	  system("scp pi@192.168.0.22:photo_R* ~Desktop");
+	  system("scp pi@192.168.0.22:photo_R* ~/Desktop");
 	  buttonControl.takePhoto = false;
 	  usleep(2000);
 	}
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
       usleep(400);
       
     }
-
+  
     
   deInit(&localCameraControl);
   deInit(&cameraControl);
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   //Disable components
-
+  
 
   //check all components have been cleaned up
   OMX_Deinit();
@@ -275,6 +275,9 @@ int main(int argc, char *argv[])
   //destroy client
   ilclient_destroy(client);
 
+  //sleep to help scp copy last file
+  sleep(3);
+  
   //pthread_exit(NULL);
   return 0;
 }
