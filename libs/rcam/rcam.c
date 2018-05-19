@@ -212,7 +212,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       else if (currentArgs->takePhoto == true)
 	{
 	  //working
-	  savePhoto(camera, image_encode, "/home/pi/Desktop/local_photo");	  
+	  savePhoto(camera, image_encode, "/home/pi/Desktop/photo_L");	  
 	  currentArgs->takePhoto = false;
 	}
       //loop termination

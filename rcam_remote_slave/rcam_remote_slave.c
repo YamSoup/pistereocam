@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
-	    savePhoto(camera, image_encode, "remote_photo");
+	    savePhoto(camera, image_encode, "photo_R");
 	    //TODO close file and open next!
 	    
 	
