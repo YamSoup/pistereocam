@@ -223,6 +223,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	  break;
 	}
       pthread_mutex_unlock(&currentArgs->mutexPtr);
+      usleep(500);
     }
 
   ///////////////
