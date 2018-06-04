@@ -9,7 +9,7 @@ Commands should include
    Start Preview
    Stop Preview
 
-Desirable commands
+Desirable commands - spolier not implemented due to bad omx implementation
    White Balence
    Other camera Options
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     
     ////////////////////////
     ////Initalize Video Scheduler
-    printf("---initalize video_scheduler component---");
+    printf("---initalize video_scheduler component---\n");
     
     ilclient_create_component(client,
 			      &video_scheduler,
@@ -257,12 +257,12 @@ int main(int argc, char *argv[])
     while(1)
       {
 	count++;
-	printf("count = %d\n", count);
+	//printf("count = %d\n", count);
 
 	//get command
-	printf("waiting for command ... \n IN RCAM\n\n\n");
+	//printf("waiting for command ... \n IN RCAM\n\n\n");
 	read(socket_fd, &current_command, sizeof(current_command));
-	printf("got command = %d\n", (int)current_command);
+	//printf("got command = %d\n", (int)current_command);
 
 	if (current_command == START_PREVIEW)
 	  {

@@ -82,7 +82,7 @@ struct cameraControl
   
   //display size has been removed replaced with a function that places based on presets
   /*
-  future implementations may change things like brightness etc
+  future implementations may change things like brightness - spoiler they wont because the omx implementation can't handle it
    */
 };
 

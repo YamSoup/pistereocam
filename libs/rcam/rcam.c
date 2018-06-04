@@ -16,7 +16,7 @@
 /////////////////////////////////////////////////////////////////////
 // initLocalCamera
 // This function starts a camera instance on the machine it is started on
-// The goal is to have the save API controls for the Local Camera and the Remote Camera
+// The goal is to have the same API controls for the Local Camera and the Remote Camera
 
 void *initLocalCamera(void *VoidPtrArgs)
 {
@@ -163,7 +163,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->photoChanged == true)
 	{
-	  //NOT WORKING?
+	  //NOT WORKING? CANT GET WORKING!!
 	  //TUNNEL_T *tunnel_ptr = &tunnel_camera_to_encode;
 	  ilclient_disable_tunnel(&tunnel_camera_to_encode);
 	  ilclient_flush_tunnels(&tunnel_camera_to_encode, 30);
@@ -205,7 +205,7 @@ void *initLocalCamera(void *VoidPtrArgs)
 	}
       else if (currentArgs->displayChanged == true)
 	{
-	  //working? pretty sure will test
+	  //working
 	  setRenderConfig(video_render, currentArgs->displayType);
 	  currentArgs->displayChanged = false;
 	}
@@ -256,14 +256,14 @@ void *initLocalCamera(void *VoidPtrArgs)
 *********************************************
 remote camera
 *********************************************
-This function creates a renderer on the server and comunicates with rcam client program to
+This function creates a renderer on the local machine (server)  and comunicates with rcam client program on the remote machine to
 display a preview until stopped
 The commands are comunicated between the programs with the enum rcam_command
 
 Idea for camera capture on rcam
 Create a buffer large enough to hold the biggest image possible and an int for the size of the final buffer
 Transfer the whole image when it is finished
-This will get over the issue of having to wait for the flag to tell when the process has stopped !
+This will get over the issue of having to wait for the flag to tell when the process has stopped ! - not implemented due to jpeg being only working format
 
 */
 
@@ -313,7 +313,7 @@ void *initServerRcam(void *VoidPtrArgs)
   //set the port params to the same as remoteCam.c
   // !!!
   // needs the checks that the local camera does
-  // to ensure sanity (OR DOES IT ALREADY DO THIS ? IT MIGHT BE)
+  // to ensure sanity as only particular values excepted (OR DOES IT ALREADY DO THIS ? IT MIGHT BE)
 
   OMXstatus = OMX_GetConfig(ilclient_get_handle(client_video_render), OMX_IndexParamPortDefinition, &render_params);
   if (OMXstatus != OMX_ErrorNone)
@@ -345,7 +345,7 @@ void *initServerRcam(void *VoidPtrArgs)
 
   //ask ilclient to allocate buffers for client_video_render
 
-  printf("enable client_video_render_input port\n");
+  //printf("enable client_video_render_input port\n");
   ilclient_enable_port_buffers(client_video_render, 90, NULL, NULL,  NULL);
   ilclient_enable_port(client_video_render, 90);
 
