@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 	  printf("take photo\n");
 	  takePhoto(&cameraControl);
 	  takePhoto(&localCameraControl);
-	  system("scp pi@192.168.0.22:photo_R* ~/Desktop");
+	  system("scp pi@192.168.0.22:photo* ~/Desktop");
 	  buttonControl.takePhoto = false;
 	  usleep(2000);
 	}
