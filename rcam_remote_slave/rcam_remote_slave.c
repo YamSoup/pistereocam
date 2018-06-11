@@ -303,13 +303,14 @@ int main(int argc, char *argv[])
 	  }
 	else if (current_command == SET_CAPTURE_RES)
 	  {
+	    //ABANDONED CAN'T GET WORKING ON LOCAL CAMERA EITHER
 	    //get the values
 	    //change the capture port
 	    //send the value back?
 	  }
 	else if (current_command == TAKE_PHOTO)
 	  {
-	    savePhoto(camera, image_encode, "photo_R");
+	    savePhoto(camera, image_encode, "photo_", "_R.jpg");
 	    //TODO close file and open next!
 	    
 	

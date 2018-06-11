@@ -212,7 +212,7 @@ void *initLocalCamera(void *VoidPtrArgs)
       else if (currentArgs->takePhoto == true)
 	{
 	  //working
-	  savePhoto(camera, image_encode, "/home/pi/Desktop/photo_L");	  
+	  savePhoto(camera, image_encode, "/home/pi/Desktop/photo_", "_L.jpg");	  
 	  currentArgs->takePhoto = false;
 	}
       //loop termination
@@ -929,7 +929,7 @@ void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType)
 //takes file prefix and returns a next suggested file name (sequential numbers)
 //attempts to optomise with a static count so will not need to start at 0
 //doing this as i'm expecting the numbers to get quite large
-char* fileFindNext(char* filePrefix)
+char* fileFindNext(char* filePrefix, char* filePostFix)
 {
   //needs to be static as a pointer to this memory is passed back
   static char currentFileName[255];  
@@ -941,7 +941,7 @@ char* fileFindNext(char* filePrefix)
       sprintf(countString, "_%05d", count);
       strcpy(currentFileName, filePrefix);
       strcat(currentFileName, countString);
-      //strcat(currentFileName, "\0");
+      strcat(currentFileName, filePostFix);
       if( access(currentFileName, F_OK) != -1)
 	{
 	  if(count == 65535)
@@ -965,17 +965,17 @@ char* fileFindNext(char* filePrefix)
 // savePhoto() saves a photo locally
 // needs to be passed camera component and image_encode component
 // because it has to directly manipulate the ports on both
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *filePrefix)
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char *filePrefix, char *filePostFix)
 {
   printf("in savePhoto\n");
 
   OMX_ERRORTYPE OMXstatus;
   OMX_BUFFERHEADERTYPE *decode_out;
-  printf("%s\n", filePrefix);
-  printf("%s\n", fileFindNext(filePrefix));
+  printf("filePreFix = %s filePostFix = %s", filePrefix, filePostFix);
+  printf("%s\n", fileFindNext(filePrefix, filePostFix));
   
   FILE *file_out;
-  file_out = fopen(fileFindNext(filePrefix), "wb");
+  file_out = fopen(fileFindNext(filePrefix, filePostFix), "wb");
   //check file?
   
   printf("capture started\n");

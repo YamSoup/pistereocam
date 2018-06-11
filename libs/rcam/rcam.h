@@ -104,8 +104,8 @@ void setPreviewRes(COMPONENT_T *camera, int width, int height, int framerate);
 void setRenderConfig(COMPONENT_T *video_render, enum displayTypes presetScreenConfig);
 void setParamImageFormat(COMPONENT_T *image_encode, enum formatType formatType);
 
-char* fileFindNext(char* filePrefix);
-void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char* fileprefix);
+char* fileFindNext(char* filePrefix, char filePostFix);
+void savePhoto(COMPONENT_T *camera, COMPONENT_T *image_encode, char* fileprefix, char* filePostFix);
 
 //functions that manipulate the cameraControl struct that ultimatly controls the camera
 void deInit(struct cameraControl *toChange);
